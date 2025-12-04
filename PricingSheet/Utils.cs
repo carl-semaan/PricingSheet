@@ -13,7 +13,6 @@ namespace PricingSheet
 {
     internal class Utils
     {
-
     }
 
 }

@@ -2,38 +2,26 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
-using Excel = Microsoft.Office.Interop.Excel;
+using ExcelInterop = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
 
 namespace PricingSheet
 {
     public partial class Flux
     {
+        public static Dictionary<(string maturity, string field), int> ColMap = new Dictionary<(string maturity, string field), int>();
+        public static Dictionary<string, int> RowMap = new Dictionary<string, int>();
+
         private void Sheet3_Startup(object sender, System.EventArgs e)
         {
-            SheetButton sheetButton = new SheetButton(
-                "Say Hello",
-                1,
-                1,
-                "Blue",
-                () => System.Windows.Forms.MessageBox.Show("Welcome to the new Pricing Sheet!!!"));
-
-            List<SheetButton> ButtonsList = new List<SheetButton>();
-            ButtonsList.Add(sheetButton);
-
-            var sheet = Globals.ThisWorkbook.Worksheets["Sheet3"];
-            var vstoSheet = Globals.Factory.GetVstoObject(sheet);
-
-            SheetInitialization sheetInitialization = new SheetInitialization(
-                vstoSheet,
-                "Flux",
-                true,
-                ButtonsList
-            );
-
-            sheetInitialization.Run();
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            RunInitialization();
+            sw.Stop();
         }
 
         private void Sheet3_Shutdown(object sender, System.EventArgs e)
@@ -51,8 +39,191 @@ namespace PricingSheet
             this.Startup += new System.EventHandler(Sheet3_Startup);
             this.Shutdown += new System.EventHandler(Sheet3_Shutdown);
         }
-
         #endregion
 
+        #region Sheet Initialization
+        private static void RunInitialization()
+        {
+            var sheet = Globals.ThisWorkbook.Worksheets["Sheet3"];
+            var vstoSheet = Globals.Factory.GetVstoObject(sheet);
+
+            List<ColumnData> columnData = new List<ColumnData>();
+            List<RowData> rowData = new List<RowData>();
+
+            JSONReader reader = new JSONReader(@"G:\Shared drives\Arbitrage\Tools\9.Pricing Sheets", "PricingSheetData.json");
+            List<Instruments> instruments = reader.LoadClass<Instruments>(nameof(Instruments));
+            List<Maturities> maturities = reader.LoadClass<Maturities>(nameof(Maturities));
+            List<Fields> fields = reader.LoadClass<Fields>(nameof(Fields));
+
+            // Merging Cells
+            for (int i = 0; i < maturities.Count * 2; i += 2)
+            {
+                new CellMerge(2, 2, i + 4, i + 5).Run(vstoSheet);
+                new CellMerge(1, 1, i + 4, i + 5).Run(vstoSheet);
+            }
+
+            // Setting the Upper Headers
+            (List<DataCell> maturityCodes, List<DataCell> maturitiesString) = UpperHeaders(maturities, 2, 4);
+            rowData.Add(new RowData(1, 4, maturityCodes));
+            rowData.Add(new RowData(2, 4, maturitiesString));
+
+            new SheetDisplay(columnData, rowData).Run(vstoSheet);
+            rowData.Clear();
+
+            // Setting the Headers
+            List<DataCell> Headers = GetHeaders(maturities, fields);
+            List<RowData> Rows = new List<RowData>();
+            rowData.Add(new RowData(3, 1, Headers));
+
+            // Setting the Data
+            columnData.Add(new ColumnData(4, 1, instruments.Select(x => new DataCell(x.Ticker, IsBold: true, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 2, instruments.Select(x => new DataCell(x.Underlying, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 3, instruments.Select(x => new DataCell(x.ShortName, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 4 + maturities.Count * 2, instruments.Select(x => new DataCell(x.ExchangeCode, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 5 + maturities.Count * 2, instruments.Select(x => new DataCell(x.Currency, IsCentered: true)).ToList()));
+
+            // Setting Default Value
+            for (int i = 0; i < maturities.Count * 2; i++)
+                columnData.Add(new ColumnData(4, 4 + i, instruments.Select(x => new DataCell("-", IsCentered: true)).ToList()));
+
+            // Display Sheet Values
+            new SheetDisplay(columnData, rowData).RunBatch(vstoSheet);
+
+            // Initialize Column and Row Maps
+            ColMap = InitializeDictionary(sheet, maturities.Select(x => x.MaturityCode).ToList(), fields.Select(x => x.Field).ToList());
+
+            //SheetButton sheetButton = new SheetButton(
+            //    "Say Hello",
+            //    1,
+            //    1,
+            //    "Blue",
+            //    () => System.Windows.Forms.MessageBox.Show("Welcome to the new Pricing Sheet!!!"));
+
+            //List<SheetButton> ButtonsList = new List<SheetButton>();
+            //ButtonsList.Add(sheetButton);
+
+            //var sheet = Globals.ThisWorkbook.Worksheets["Sheet3"];
+            //var vstoSheet = Globals.Factory.GetVstoObject(sheet);
+
+            //SheetInitialization sheetInitialization = new SheetInitialization(
+            //    vstoSheet,
+            //    "Flux",
+            //    true,
+            //    ButtonsList
+            //);
+
+            //sheetInitialization.Run();
+        }
+
+        private static (List<DataCell>, List<DataCell>) UpperHeaders(List<Maturities> maturities, int row, int column)
+        {
+            List<DataCell> Codes = new List<DataCell>();
+
+            List<DataCell> Maturities = new List<DataCell>();
+
+            foreach (var mat in maturities)
+            {
+                Codes.Add(new DataCell(mat.MaturityCode, IsBold: true, IsCentered: true, Offset: 1));
+                Maturities.Add(new DataCell(mat.Maturity.ToString(), IsBold: true, IsCentered: true, Offset: 1));
+            }
+
+            return (Maturities, Codes);
+        }
+
+        private static List<DataCell> GetHeaders(List<Maturities> maturities, List<Fields> fields)
+        {
+            List<string> headers = new List<string>() { "Ticker", "Underlying", "Short Name" };
+
+            foreach (var mat in maturities)
+            {
+                foreach (var field in fields)
+                {
+                    headers.Add($"{field.Field}");
+                }
+            }
+
+            headers.Add("Exchange Code");
+            headers.Add("Currency");
+
+            var newHeaders = headers.Select((h, index) => new DataCell(h, IsBold: true, IsCentered: true)).ToList();
+
+            return newHeaders;
+        }
+
+        private static Dictionary<(string maturity, string field), int> InitializeDictionary(
+            ExcelInterop.Worksheet sheet,
+            List<string> maturityCodes,
+            List<string> fields,
+            int headerRow1 = 2,
+            int headerRow2 = 3,
+            int startingColumn = 4
+            )
+        {
+            Dictionary<(string maturity, string field), int> dictionary = new Dictionary<(string maturity, string field), int>();
+
+            int lastColumn = startingColumn + maturityCodes.Count * fields.Count - 1;
+            for (int col = startingColumn; col <= lastColumn; col += fields.Count)
+            {
+                string colMaturity = ((sheet.Cells[headerRow1, col] as ExcelInterop.Range)?.Value2 ?? "").ToString().Trim();
+                for (int j = 0; j < fields.Count; j++)
+                {
+                    string colField = ((sheet.Cells[headerRow2, col + j] as ExcelInterop.Range)?.Value2 ?? "").ToString().Trim();
+                    dictionary[(colMaturity, colField)] = col + j;
+                }
+            }
+
+            return dictionary;
+        }
+        #endregion
+
+        #region SheetData
+        internal class Instruments
+        {
+            public string Ticker { get; set; }
+            public string Underlying { get; set; }
+            public string ShortName { get; set; }
+            public string ExchangeCode { get; set; }
+            public string InstrumentType { get; set; }
+            public string Currency { get; set; }
+
+
+            public Instruments() { }
+            public Instruments(string ticker, string underlying, string shortName, string exchangeCode, string instrumentType, string currency)
+            {
+                Ticker = ticker;
+                Underlying = underlying;
+                ShortName = shortName;
+                ExchangeCode = exchangeCode;
+                InstrumentType = instrumentType;
+                Currency = currency;
+            }
+        }
+
+        internal class Maturities
+        {
+            public int Maturity { get; set; }
+            public string MaturityCode { get; set; }
+
+            public Maturities() { }
+
+            public Maturities(int Maturity, string MaturityCode)
+            {
+                this.Maturity = Maturity;
+                this.MaturityCode = MaturityCode;
+            }
+        }
+
+        internal class Fields
+        {
+            public string Field { get; set; }
+
+            public Fields() { }
+
+            public Fields(string Field)
+            {
+                this.Field = Field;
+            }
+        }
+        #endregion
     }
 }
