@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,10 +16,10 @@ namespace PricingSheet
         public List<string> MaturityCodes { get; set; }
         public List<string> Fields { get; set; }
 
-        public BloombergPipeline(List<Flux.Instruments> Instruments, List<string> MaturityCodes, List<string> Fields ) 
-        { 
-            this.Instruments = Instruments; 
-            this.MaturityCodes = MaturityCodes; 
+        public BloombergPipeline(List<Flux.Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
+        {
+            this.Instruments = Instruments;
+            this.MaturityCodes = MaturityCodes;
             this.Fields = Fields;
         }
 
@@ -32,60 +33,71 @@ namespace PricingSheet
                 ServerPort = 8194          // Default API port
             };
 
-            using (Session session = new Session(options))
+            try
             {
-                if (!session.Start())
-                    throw new Exception ("Failed to start session");
-
-                if (!session.OpenService("//blp/mktdata"))
-                    throw new Exception("Failed to open service");
-
-                // Create subscriptions
-                var subscriptions = GetSubscriptions();
-
-                // Subscribe
-                session.Subscribe(subscriptions);
-                Console.WriteLine("Subscribed to live data for multiple instruments/fields.");
-
-                // Event loop
-                while (!_token.IsCancellationRequested)
+                using (Session session = new Session(options))
                 {
-                    Event ev = session.NextEvent();
-                    foreach (Message msg in ev)
+                    if (!session.Start())
+                        throw new Exception("Failed to start session");
+
+                    if (!session.OpenService("//blp/mktdata"))
+                        throw new Exception("Failed to open service");
+
+                    // Create subscriptions
+                    var subscriptions = GetSubscriptions();
+
+                    // Subscribe
+                    session.Subscribe(subscriptions);
+                    Console.WriteLine("Subscribed to live data for multiple instruments/fields.");
+
+                    // Event loop
+                    while (!_token.IsCancellationRequested)
                     {
-                        if (msg.MessageType.Equals("MarketDataEvents") || msg.MessageType.Equals("MarketDataUpdate"))
+                        Event ev = session.NextEvent();
+                        foreach (Message msg in ev)
                         {
-                            string instrument = msg.CorrelationID.ToString().Substring(6);
-                            double bid = msg.HasElement("BID") ? msg.GetElementAsFloat64("BID") : double.NaN;
-                            double ask = msg.HasElement("ASK") ? msg.GetElementAsFloat64("ASK") : double.NaN;
+                            if (msg.MessageType.Equals("MarketDataEvents") || msg.MessageType.Equals("MarketDataUpdate"))
+                            {
+                                string instrument = msg.CorrelationID.ToString().Substring(6);
+                                double bid = msg.HasElement("BID") ? msg.GetElementAsFloat64("BID") : double.NaN;
+                                double ask = msg.HasElement("ASK") ? msg.GetElementAsFloat64("ASK") : double.NaN;
 
+                                if (!double.IsNaN(bid) || !double.IsNaN(ask))
+                                    Console.WriteLine($"Instrument: {instrument}, Bid: {bid}, Ask: {ask}");
 
-                            //if (instrumentDataList.Where(x => x.Instrument == instrument).Any())
-                            //    instrumentDataList.Where(x => x.Instrument == instrument).First().update(instrument, bid, ask);
-                            //else
-                            //    instrumentDataList.Add(new InstrumentData(instrument, bid, ask));
+                                //if (instrumentDataList.Where(x => x.Instrument == instrument).Any())
+                                //    instrumentDataList.Where(x => x.Instrument == instrument).First().update(instrument, bid, ask);
+                                //else
+                                //    instrumentDataList.Add(new InstrumentData(instrument, bid, ask));
 
-                            //System.Threading.Thread.Sleep(1000);
+                                //System.Threading.Thread.Sleep(1000);
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
             }
         }
 
         private List<Subscription> GetSubscriptions()
         {
             List<Subscription> subscriptions = new List<Subscription>();
+            string instr;
 
-            foreach(var instrument in Instruments)
+            foreach (var instrument in Instruments)
             {
-                foreach(var maturity in MaturityCodes)
+                foreach (var maturity in MaturityCodes)
                 {
-                    subscriptions.Add(new Subscription($"{instrument.Ticker}={maturity} {instrument.ExchangeCode} {instrument.InstrumentType}", Fields, new CorrelationID(instrument)));
+                    instr = $"{instrument.Ticker}={maturity} {instrument.ExchangeCode} {instrument.InstrumentType}";
+                    subscriptions.Add(new Subscription(instr, Fields, new CorrelationID(instr)));
                 }
             }
 
             return subscriptions;
-        } 
+        }
 
         //private class InstrumentData
         //{
