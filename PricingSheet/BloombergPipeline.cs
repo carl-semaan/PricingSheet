@@ -6,18 +6,22 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Bloomberglp.Blpapi;
+using ExcelVSTO = Microsoft.Office.Tools.Excel;
 
 namespace PricingSheet
 {
     public class BloombergPipeline
     {
         private CancellationToken _token;
+        private SynchronizationContext _syncContext = SynchronizationContext.Current;
         public List<Flux.Instruments> Instruments { get; set; }
         public List<string> MaturityCodes { get; set; }
         public List<string> Fields { get; set; }
+        public ExcelVSTO.Worksheet Sheet { get; set; }
 
-        public BloombergPipeline(List<Flux.Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
+        public BloombergPipeline(ExcelVSTO.Worksheet Sheet, List<Flux.Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
         {
+            this.Sheet = Sheet;
             this.Instruments = Instruments;
             this.MaturityCodes = MaturityCodes;
             this.Fields = Fields;
@@ -59,18 +63,15 @@ namespace PricingSheet
                             if (msg.MessageType.Equals("MarketDataEvents") || msg.MessageType.Equals("MarketDataUpdate"))
                             {
                                 string instrument = msg.CorrelationID.ToString().Substring(6);
-                                double bid = msg.HasElement("BID") ? msg.GetElementAsFloat64("BID") : double.NaN;
-                                double ask = msg.HasElement("ASK") ? msg.GetElementAsFloat64("ASK") : double.NaN;
-
-                                if (!double.IsNaN(bid) || !double.IsNaN(ask))
-                                    Console.WriteLine($"Instrument: {instrument}, Bid: {bid}, Ask: {ask}");
-
-                                //if (instrumentDataList.Where(x => x.Instrument == instrument).Any())
-                                //    instrumentDataList.Where(x => x.Instrument == instrument).First().update(instrument, bid, ask);
-                                //else
-                                //    instrumentDataList.Add(new InstrumentData(instrument, bid, ask));
-
-                                //System.Threading.Thread.Sleep(1000);
+                                foreach (var field in Fields)
+                                {
+                                    if (msg.HasElement(field))
+                                    {
+                                        var value = msg.GetElementAsFloat64(field);
+                                        if (!double.IsNaN(value))
+                                            updateSheet(instrument, field, value);
+                                    }
+                                }
                             }
                         }
                     }
@@ -98,6 +99,32 @@ namespace PricingSheet
 
             return subscriptions;
         }
+
+        private void updateSheet(string instrument, string field, double value)
+        {
+            string[] parts = instrument.Split('=');
+
+            (int row, int col) = Utils.FindCellFlux(parts[1].Split(' ')[0], field, parts[0]);
+
+            _syncContext.Post(_ =>
+            {
+                SheetDisplay.DisplayCell(Sheet, new DataCell(value.ToString(), IsCentered: true), row, col);
+            }, null);
+        }
+
+        //double bid = msg.HasElement("BID") ? msg.GetElementAsFloat64("BID") : double.NaN;
+        //double ask = msg.HasElement("ASK") ? msg.GetElementAsFloat64("ASK") : double.NaN;
+
+        //if (!double.IsNaN(bid) || !double.IsNaN(ask))
+        //    Console.WriteLine($"Instrument: {instrument}, Bid: {bid}, Ask: {ask}");
+
+        //if (instrumentDataList.Where(x => x.Instrument == instrument).Any())
+        //    instrumentDataList.Where(x => x.Instrument == instrument).First().update(instrument, bid, ask);
+        //else
+        //    instrumentDataList.Add(new InstrumentData(instrument, bid, ask));
+
+        //System.Threading.Thread.Sleep(1000);
+
 
         //private class InstrumentData
         //{

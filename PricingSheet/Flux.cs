@@ -109,7 +109,12 @@ namespace PricingSheet
             InitializeDictionaries(interopSheet, maturities.Select(x => x.MaturityCode).ToList(), fields.Select(x => x.Field).ToList(), instruments.Select(x => x.Ticker).ToList());
 
 
-            BloombergPipeline pipeline = new BloombergPipeline(instruments, maturities.Select(x => x.MaturityCode).ToList(), fields.Select(x => x.Field).ToList());
+            BloombergPipeline pipeline = new BloombergPipeline(
+                vstoSheet,
+                instruments,
+                maturities.Select(x => x.MaturityCode).ToList(),
+                fields.Select(x => x.Field).ToList()
+            );
             Task.Run(() => pipeline.Launch(BloombegCts.Token));
 
             //SheetButton sheetButton = new SheetButton(
@@ -189,7 +194,7 @@ namespace PricingSheet
             ColMap = ColDictionary;
 
             Dictionary<string, int> RowDictionary = new Dictionary<string, int>();
-            for(int row = startingRow; row < instruments.Count + startingRow; row++)
+            for (int row = startingRow; row < instruments.Count + startingRow; row++)
             {
                 string rowInstrument = ((sheet.Cells[row, instrumentColumn] as ExcelInterop.Range)?.Value2 ?? "").ToString().Trim().ToLower();
                 RowDictionary[rowInstrument] = row;
