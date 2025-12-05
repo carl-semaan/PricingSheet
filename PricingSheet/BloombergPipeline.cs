@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -52,35 +53,62 @@ namespace PricingSheet
 
                     // Subscribe
                     session.Subscribe(subscriptions);
-                    Console.WriteLine("Subscribed to live data for multiple instruments/fields.");
+                    System.Diagnostics.Debug.WriteLine("Subscribed to live data for multiple instruments/fields.");
 
                     // Event loop
+                    int ctr = 0;
                     while (!_token.IsCancellationRequested)
                     {
-                        Event ev = session.NextEvent();
-                        foreach (Message msg in ev)
-                        {
-                            if (msg.MessageType.Equals("MarketDataEvents") || msg.MessageType.Equals("MarketDataUpdate"))
+                        try {
+                            Log($"Waiting for next event... {ctr} {token.IsCancellationRequested}");
+                            Event ev = session.NextEvent();
+                            Log($"Received event: {ev.Type}");
+                            foreach (Message msg in ev)
                             {
-                                string instrument = msg.CorrelationID.ToString().Substring(6);
-                                foreach (var field in Fields)
+                                Log($"Event Type: {ev.Type},\nMessage: {msg}");
+                                if (msg.MessageType.Equals("MarketDataEvents") || msg.MessageType.Equals("MarketDataUpdate"))
                                 {
-                                    if (msg.HasElement(field))
+                                    string instrument = msg.CorrelationID.ToString().Substring(6);
+                                    foreach (var field in Fields)
                                     {
-                                        var value = msg.GetElementAsFloat64(field);
-                                        if (!double.IsNaN(value))
-                                            updateSheet(instrument, field, value);
+                                        if (msg.HasElement(field))
+                                        {
+                                            var element = msg.GetElement(field);
+                                            if (element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.FLOAT64 || element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.INT32)
+                                            {
+                                                var value = msg.GetElementAsFloat64(field);
+                                                if (!double.IsNaN(value))
+                                                    updateSheet(instrument, field, value);
+                                            }
+                                        }
                                     }
                                 }
+                                else if(msg.MessageType.Equals("SubscriptionFailure") || msg.MessageType.Equals("SubscriptionTerminated"))
+                                {
+                                    Log($"Subscription failure for {msg.CorrelationID}: {msg}");
+                                    return;
+                                }
                             }
+                            ctr++;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"Loop exception: {ex}");
+                            System.Diagnostics.Debug.WriteLine($"Error: {ex.ToString()}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Log($"outer exception: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.ToString()}");
             }
+        }
+
+        private void Log(string message)
+        {
+            File.AppendAllText(@"C:\Users\\Melanion\Desktop\Log.txt", $"{DateTime.Now}: {message}{Environment.NewLine}");
         }
 
         private List<Subscription> GetSubscriptions()
@@ -106,17 +134,14 @@ namespace PricingSheet
 
             (int row, int col) = Utils.FindCellFlux(parts[1].Split(' ')[0], field, parts[0]);
 
-            _syncContext.Post(_ =>
-            {
-                SheetDisplay.DisplayCell(Sheet, new DataCell(value.ToString(), IsCentered: true), row, col);
-            }, null);
+            SheetDisplay.DisplayCell(Sheet, new DataCell(value.ToString(), IsCentered: true), row, col);
         }
 
         //double bid = msg.HasElement("BID") ? msg.GetElementAsFloat64("BID") : double.NaN;
         //double ask = msg.HasElement("ASK") ? msg.GetElementAsFloat64("ASK") : double.NaN;
 
         //if (!double.IsNaN(bid) || !double.IsNaN(ask))
-        //    Console.WriteLine($"Instrument: {instrument}, Bid: {bid}, Ask: {ask}");
+        //    System.Diagnostics.Debug.WriteLine($"Instrument: {instrument}, Bid: {bid}, Ask: {ask}");
 
         //if (instrumentDataList.Where(x => x.Instrument == instrument).Any())
         //    instrumentDataList.Where(x => x.Instrument == instrument).First().update(instrument, bid, ask);
