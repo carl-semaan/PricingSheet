@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Bloomberglp.Blpapi;
 
@@ -9,19 +10,22 @@ namespace PricingSheet
 {
     public class BloombergPipeline
     {
-        public List<string> Instruments { get; set; }
+        private CancellationToken _token;
+        public List<Flux.Instruments> Instruments { get; set; }
         public List<string> MaturityCodes { get; set; }
         public List<string> Fields { get; set; }
 
-        public BloombergPipeline(List<string> Instruments, List<string> MaturityCodes, List<string> Fields ) 
+        public BloombergPipeline(List<Flux.Instruments> Instruments, List<string> MaturityCodes, List<string> Fields ) 
         { 
             this.Instruments = Instruments; 
             this.MaturityCodes = MaturityCodes; 
             this.Fields = Fields;
         }
 
-        public void Launch()
+        public void Launch(CancellationToken token)
         {
+            _token = token;
+
             SessionOptions options = new SessionOptions
             {
                 ServerHost = "localhost", // Bloomberg Terminal host
@@ -31,32 +35,20 @@ namespace PricingSheet
             using (Session session = new Session(options))
             {
                 if (!session.Start())
-                {
-                    Console.WriteLine("Failed to start session");
-                    return;
-                }
+                    throw new Exception ("Failed to start session");
 
                 if (!session.OpenService("//blp/mktdata"))
-                {
-                    Console.WriteLine("Failed to open service");
-                    return;
-                }
-
+                    throw new Exception("Failed to open service");
 
                 // Create subscriptions
-                var subscriptions = new List<Subscription>();
-                foreach (var instrument in Instruments)
-                {
-                    subscriptions.Add(new Subscription(instrument, Fields, new CorrelationID(instrument)));
-                }
+                var subscriptions = GetSubscriptions();
 
                 // Subscribe
                 session.Subscribe(subscriptions);
                 Console.WriteLine("Subscribed to live data for multiple instruments/fields.");
 
-                List<InstrumentData> instrumentDataList = new List<InstrumentData>();
                 // Event loop
-                while (true)
+                while (!_token.IsCancellationRequested)
                 {
                     Event ev = session.NextEvent();
                     foreach (Message msg in ev)
@@ -67,10 +59,11 @@ namespace PricingSheet
                             double bid = msg.HasElement("BID") ? msg.GetElementAsFloat64("BID") : double.NaN;
                             double ask = msg.HasElement("ASK") ? msg.GetElementAsFloat64("ASK") : double.NaN;
 
-                            if (instrumentDataList.Where(x => x.Instrument == instrument).Any())
-                                instrumentDataList.Where(x => x.Instrument == instrument).First().update(instrument, bid, ask);
-                            else
-                                instrumentDataList.Add(new InstrumentData(instrument, bid, ask));
+
+                            //if (instrumentDataList.Where(x => x.Instrument == instrument).Any())
+                            //    instrumentDataList.Where(x => x.Instrument == instrument).First().update(instrument, bid, ask);
+                            //else
+                            //    instrumentDataList.Add(new InstrumentData(instrument, bid, ask));
 
                             //System.Threading.Thread.Sleep(1000);
                         }
@@ -79,37 +72,52 @@ namespace PricingSheet
             }
         }
 
-        private class InstrumentData
+        private List<Subscription> GetSubscriptions()
         {
-            public string Instrument { get; set; }
-            public double Bid { get; set; }
-            public double Ask { get; set; }
+            List<Subscription> subscriptions = new List<Subscription>();
 
-            public InstrumentData()
+            foreach(var instrument in Instruments)
             {
-                Instrument = string.Empty;
-                Bid = double.NaN;
-                Ask = double.NaN;
+                foreach(var maturity in MaturityCodes)
+                {
+                    subscriptions.Add(new Subscription($"{instrument.Ticker}={maturity} {instrument.ExchangeCode} {instrument.InstrumentType}", Fields, new CorrelationID(instrument)));
+                }
             }
 
-            public InstrumentData(string instrument, double bid, double ask)
-            {
-                Instrument = instrument;
-                Bid = bid;
-                Ask = ask;
-            }
+            return subscriptions;
+        } 
 
-            public void update(string instrument, double bid, double ask)
-            {
-                if (!string.IsNullOrEmpty(instrument))
-                    Instrument = instrument;
-                if (!double.IsNaN(bid))
-                    Bid = bid;
-                if (!double.IsNaN(ask))
-                    Ask = ask;
-            }
+        //private class InstrumentData
+        //{
+        //    public string Instrument { get; set; }
+        //    public double Bid { get; set; }
+        //    public double Ask { get; set; }
 
-        }
+        //    public InstrumentData()
+        //    {
+        //        Instrument = string.Empty;
+        //        Bid = double.NaN;
+        //        Ask = double.NaN;
+        //    }
+
+        //    public InstrumentData(string instrument, double bid, double ask)
+        //    {
+        //        Instrument = instrument;
+        //        Bid = bid;
+        //        Ask = ask;
+        //    }
+
+        //    public void update(string instrument, double bid, double ask)
+        //    {
+        //        if (!string.IsNullOrEmpty(instrument))
+        //            Instrument = instrument;
+        //        if (!double.IsNaN(bid))
+        //            Bid = bid;
+        //        if (!double.IsNaN(ask))
+        //            Ask = ask;
+        //    }
+
+        //}
 
     }
 }

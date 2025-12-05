@@ -1,4 +1,5 @@
-﻿using Microsoft.Office.Interop.Excel;
+﻿using DocumentFormat.OpenXml.Office2010.PowerPoint;
+using Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Tools.Excel;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,17 @@ namespace PricingSheet
 {
     internal class Utils
     {
+        public static (int row, int column) FindCellFlux(string maturity, string field, string ticker)
+        {
+            if (!Flux.ColMap.TryGetValue((maturity.Trim().ToLower(), field.Trim().ToLower()), out int col))
+                throw new Exception($"Column not found for: {maturity} - {field}");
+
+            if (!Flux.RowMap.TryGetValue(ticker.Trim().ToLower(), out int row))
+                throw new Exception($"Row not found for: {ticker}");
+
+            return (row, col);
+        }
+
     }
 
 }

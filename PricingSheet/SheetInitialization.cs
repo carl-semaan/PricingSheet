@@ -17,15 +17,19 @@ namespace PricingSheet
         public string Name { get; set; }
         public bool ClearOnStartUp { get; set; }
         public List<SheetButton> SheetButtons { get; set; }
+        public int FreezeRow { get; set; }
+        public int FreezeColumn { get; set; }
 
         public SheetInitialization() { }
 
-        public SheetInitialization(ExcelVSTO.Worksheet Sheet, string Name, bool ClearOnStartUp, List<SheetButton> SheetButtons)
+        public SheetInitialization(ExcelVSTO.Worksheet Sheet, string Name, bool ClearOnStartUp, List<SheetButton> SheetButtons, int FreezeRow = 0, int FreezeColumn = 0)
         {
             this.Sheet = Sheet;
             this.Name = Name;
             this.ClearOnStartUp = ClearOnStartUp;
             this.SheetButtons = SheetButtons;
+            this.FreezeRow = FreezeRow;
+            this.FreezeColumn = FreezeColumn;
         }
 
         public void Run()
@@ -39,6 +43,8 @@ namespace PricingSheet
 
                 foreach (var btn in SheetButtons)
                     AddButton(btn);
+
+                FreezePanes();
             }
         }
 
@@ -54,6 +60,31 @@ namespace PricingSheet
 
             button.Click += (s, e) => btn.Action();
         }
+
+        private void FreezePanes()
+        {
+            if (Sheet == null)
+                return;
+
+            // Only freeze if either rows or columns > 0
+            if (FreezeRow <= 0 && FreezeColumn <= 0)
+                return;
+
+            // Activate the sheet first
+            Sheet.Activate();
+
+            ExcelInterop.Worksheet interopSheet = Sheet.InnerObject;
+            var window = interopSheet.Application.ActiveWindow;
+
+            if (FreezeRow > 0)
+                window.SplitRow = FreezeRow;
+
+            if (FreezeColumn > 0)
+                window.SplitColumn = FreezeColumn;
+
+            window.FreezePanes = true;
+        }
+
     }
 
     public class SheetButton
@@ -98,7 +129,7 @@ namespace PricingSheet
                 DisplayBatchColumn(sheet, col.Data, col.StartRow, col.Column);
             }
 
-            foreach( RowData row in Rows)
+            foreach (RowData row in Rows)
             {
                 DisplayBatchRow(sheet, row.Data, row.Row, row.StartColumn);
             }

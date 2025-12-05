@@ -5,6 +5,8 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
@@ -15,6 +17,7 @@ namespace PricingSheet
     {
         public static Dictionary<(string maturity, string field), int> ColMap = new Dictionary<(string maturity, string field), int>();
         public static Dictionary<string, int> RowMap = new Dictionary<string, int>();
+        public CancellationTokenSource BloombegCts = new CancellationTokenSource();
 
         private void Sheet3_Startup(object sender, System.EventArgs e)
         {
@@ -26,6 +29,7 @@ namespace PricingSheet
 
         private void Sheet3_Shutdown(object sender, System.EventArgs e)
         {
+            BloombegCts.Cancel();
         }
 
         #region VSTO Designer generated code
@@ -42,11 +46,23 @@ namespace PricingSheet
         #endregion
 
         #region Sheet Initialization
-        private static void RunInitialization()
+        private void RunInitialization()
         {
-            var sheet = Globals.ThisWorkbook.Worksheets["Sheet3"];
-            var vstoSheet = Globals.Factory.GetVstoObject(sheet);
+            var interopSheet = Globals.ThisWorkbook.Worksheets["Sheet3"];
+            var vstoSheet = Globals.Factory.GetVstoObject(interopSheet);
 
+            // Initializing Sheet with buttons
+            SheetInitialization sheetInitialization = new SheetInitialization(
+                vstoSheet,
+                "Flux",
+                true,
+                new List<SheetButton>(),
+                FreezeRow: 3
+            );
+
+            sheetInitialization.Run();
+
+            // Initializing Data
             List<ColumnData> columnData = new List<ColumnData>();
             List<RowData> rowData = new List<RowData>();
 
@@ -90,7 +106,11 @@ namespace PricingSheet
             new SheetDisplay(columnData, rowData).RunBatch(vstoSheet);
 
             // Initialize Column and Row Maps
-            ColMap = InitializeDictionary(sheet, maturities.Select(x => x.MaturityCode).ToList(), fields.Select(x => x.Field).ToList());
+            InitializeDictionaries(interopSheet, maturities.Select(x => x.MaturityCode).ToList(), fields.Select(x => x.Field).ToList(), instruments.Select(x => x.Ticker).ToList());
+
+
+            BloombergPipeline pipeline = new BloombergPipeline(instruments, maturities.Select(x => x.MaturityCode).ToList(), fields.Select(x => x.Field).ToList());
+            Task.Run(() => pipeline.Launch(BloombegCts.Token));
 
             //SheetButton sheetButton = new SheetButton(
             //    "Say Hello",
@@ -105,14 +125,6 @@ namespace PricingSheet
             //var sheet = Globals.ThisWorkbook.Worksheets["Sheet3"];
             //var vstoSheet = Globals.Factory.GetVstoObject(sheet);
 
-            //SheetInitialization sheetInitialization = new SheetInitialization(
-            //    vstoSheet,
-            //    "Flux",
-            //    true,
-            //    ButtonsList
-            //);
-
-            //sheetInitialization.Run();
         }
 
         private static (List<DataCell>, List<DataCell>) UpperHeaders(List<Maturities> maturities, int row, int column)
@@ -150,34 +162,44 @@ namespace PricingSheet
             return newHeaders;
         }
 
-        private static Dictionary<(string maturity, string field), int> InitializeDictionary(
+        private static void InitializeDictionaries(
             ExcelInterop.Worksheet sheet,
             List<string> maturityCodes,
             List<string> fields,
-            int headerRow1 = 2,
-            int headerRow2 = 3,
-            int startingColumn = 4
+            List<string> instruments,
+            int maturityRow = 2,
+            int fieldRow = 3,
+            int instrumentColumn = 1,
+            int startingColumn = 4,
+            int startingRow = 4
             )
         {
-            Dictionary<(string maturity, string field), int> dictionary = new Dictionary<(string maturity, string field), int>();
+            Dictionary<(string maturity, string field), int> ColDictionary = new Dictionary<(string maturity, string field), int>();
 
             int lastColumn = startingColumn + maturityCodes.Count * fields.Count - 1;
             for (int col = startingColumn; col <= lastColumn; col += fields.Count)
             {
-                string colMaturity = ((sheet.Cells[headerRow1, col] as ExcelInterop.Range)?.Value2 ?? "").ToString().Trim();
+                string colMaturity = ((sheet.Cells[maturityRow, col] as ExcelInterop.Range)?.Value2 ?? "").ToString().Trim().ToLower();
                 for (int j = 0; j < fields.Count; j++)
                 {
-                    string colField = ((sheet.Cells[headerRow2, col + j] as ExcelInterop.Range)?.Value2 ?? "").ToString().Trim();
-                    dictionary[(colMaturity, colField)] = col + j;
+                    string colField = ((sheet.Cells[fieldRow, col + j] as ExcelInterop.Range)?.Value2 ?? "").ToString().Trim().ToLower();
+                    ColDictionary[(colMaturity, colField)] = col + j;
                 }
             }
+            ColMap = ColDictionary;
 
-            return dictionary;
+            Dictionary<string, int> RowDictionary = new Dictionary<string, int>();
+            for(int row = startingRow; row < instruments.Count + startingRow; row++)
+            {
+                string rowInstrument = ((sheet.Cells[row, instrumentColumn] as ExcelInterop.Range)?.Value2 ?? "").ToString().Trim().ToLower();
+                RowDictionary[rowInstrument] = row;
+            }
+            RowMap = RowDictionary;
         }
         #endregion
 
         #region SheetData
-        internal class Instruments
+        public class Instruments
         {
             public string Ticker { get; set; }
             public string Underlying { get; set; }
