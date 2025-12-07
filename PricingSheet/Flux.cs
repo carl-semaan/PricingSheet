@@ -18,7 +18,9 @@ namespace PricingSheet
         public static Dictionary<(string maturity, string field), int> ColMap = new Dictionary<(string maturity, string field), int>();
         public static Dictionary<string, int> RowMap = new Dictionary<string, int>();
         public CancellationTokenSource BloombegCts = new CancellationTokenSource();
-
+        public BlockData InstrumentDisplayBlock;
+        private SheetDisplay SheetDisplay;
+        private readonly object _matrixLock = new object();
         private void Sheet3_Startup(object sender, System.EventArgs e)
         {
             Stopwatch sw = new Stopwatch();
@@ -83,7 +85,7 @@ namespace PricingSheet
             rowData.Add(new RowData(1, 4, maturityCodes));
             rowData.Add(new RowData(2, 4, maturitiesString));
 
-            new SheetDisplay(columnData, rowData).Run(vstoSheet);
+            new SheetDisplay(vstoSheet, columnData, rowData).Run();
             rowData.Clear();
 
             // Setting the Headers
@@ -98,24 +100,28 @@ namespace PricingSheet
             columnData.Add(new ColumnData(4, 4 + maturities.Count * 2, instruments.Select(x => new DataCell(x.ExchangeCode, IsCentered: true)).ToList()));
             columnData.Add(new ColumnData(4, 5 + maturities.Count * 2, instruments.Select(x => new DataCell(x.Currency, IsCentered: true)).ToList()));
 
-            // Setting Default Value
-            for (int i = 0; i < maturities.Count * 2; i++)
-                columnData.Add(new ColumnData(4, 4 + i, instruments.Select(x => new DataCell("-", IsCentered: true)).ToList()));
+            // Setting the Display Block
+            InstrumentDisplayBlock = new BlockData(4, 4, instruments.Select(x => x.Ticker).ToList(), maturities.SelectMany(m => fields.Select(f => $"{m.MaturityCode}_{f.Field}")).ToList());
 
             // Display Sheet Values
-            new SheetDisplay(columnData, rowData).RunBatch(vstoSheet);
+            SheetDisplay = new SheetDisplay(vstoSheet, columnData, rowData, InstrumentDisplayBlock);
+            SheetDisplay.RunDisplay();
 
             // Initialize Column and Row Maps
             InitializeDictionaries(interopSheet, maturities.Select(x => x.MaturityCode).ToList(), fields.Select(x => x.Field).ToList(), instruments.Select(x => x.Ticker).ToList());
 
-
+            // Launch Bloomberg Pipeline
             BloombergPipeline pipeline = new BloombergPipeline(
+                this,
                 vstoSheet,
                 instruments,
                 maturities.Select(x => x.MaturityCode).ToList(),
                 fields.Select(x => x.Field).ToList()
             );
             Task.Run(() => pipeline.Launch(BloombegCts.Token));
+
+            // Launch Auto Display Update
+            StartAutoUpdate();
 
             //SheetButton sheetButton = new SheetButton(
             //    "Say Hello",
@@ -126,10 +132,6 @@ namespace PricingSheet
 
             //List<SheetButton> ButtonsList = new List<SheetButton>();
             //ButtonsList.Add(sheetButton);
-
-            //var sheet = Globals.ThisWorkbook.Worksheets["Sheet3"];
-            //var vstoSheet = Globals.Factory.GetVstoObject(sheet);
-
         }
 
         private static (List<DataCell>, List<DataCell>) UpperHeaders(List<Maturities> maturities, int row, int column)
@@ -249,6 +251,37 @@ namespace PricingSheet
             public Fields(string Field)
             {
                 this.Field = Field;
+            }
+        }
+        #endregion
+
+        #region Sheet Auto Display Update
+        private System.Windows.Forms.Timer uiTimer = new System.Windows.Forms.Timer();
+
+        public void StartAutoUpdate()
+        {
+            uiTimer.Interval = 500;
+            uiTimer.Tick += (s, e) =>
+            {
+                lock (_matrixLock)
+                {
+                    SheetDisplay.RunBlock();
+                }
+            };
+            uiTimer.Start();
+        }
+
+        public void UpdateMatrixSafe(string instrument, string field, object value)
+        {
+            string[] parts = instrument.Split('=');
+
+            string maturity = parts[1].Split(' ')[0];
+            string ticker = parts[0];
+
+            string Maturity_Field = $"{maturity}_{field}";
+            lock (_matrixLock)
+            {
+                InstrumentDisplayBlock.UpdateMatrix(ticker, Maturity_Field, value);
             }
         }
         #endregion

@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Office.Tools.Excel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -66,11 +67,9 @@ namespace PricingSheet
             if (Sheet == null)
                 return;
 
-            // Only freeze if either rows or columns > 0
             if (FreezeRow <= 0 && FreezeColumn <= 0)
                 return;
 
-            // Activate the sheet first
             Sheet.Activate();
 
             ExcelInterop.Worksheet interopSheet = Sheet.InnerObject;
@@ -113,35 +112,85 @@ namespace PricingSheet
 
     public class SheetDisplay
     {
+        public ExcelVSTO.Worksheet Sheet { get; set; }
         public List<ColumnData> Columns { get; set; }
         public List<RowData> Rows { get; set; }
+        public BlockData Block { get; set; }
 
-        public SheetDisplay(List<ColumnData> Columns, List<RowData> Rows)
+        public SheetDisplay(ExcelVSTO.Worksheet Sheet, List<ColumnData> Columns, List<RowData> Rows, BlockData Block = null)
         {
+            this.Sheet = Sheet;
             this.Columns = Columns;
             this.Rows = Rows;
+            this.Block = Block;
         }
 
-        public void RunBatch(ExcelVSTO.Worksheet sheet)
+        public void RunDisplay(bool batch = true)
+        {
+            if (batch)
+                RunBatch();
+            else
+                Run();
+
+            if (Block != null)
+                RunBlock();
+        }
+
+        public void RunBlock()
+        {
+            if (Sheet == null || Block == null || Block.Data == null)
+                return;
+
+            int rows = Block.Data.GetLength(0);
+            int cols = Block.Data.GetLength(1);
+
+            if (rows == 0 || cols == 0)
+                return;
+
+            ExcelInterop.Application app = Sheet.Application;
+            bool prevUpdate = app.ScreenUpdating;
+            app.ScreenUpdating = false;
+
+            try
+            {
+                ExcelInterop.Range topLeft = Sheet.Cells[Block.StartRow, Block.StartColumn];
+                ExcelInterop.Range bottomRight = Sheet.Cells[Block.StartRow + rows - 1, Block.StartColumn + cols - 1];
+                ExcelInterop.Range writeRange = Sheet.Range[topLeft, bottomRight];
+
+                writeRange.Value2 = Block.Data;
+            }
+            finally
+            {
+                app.ScreenUpdating = prevUpdate;
+            }
+        }
+
+        public void RunBatch()
         {
             foreach (ColumnData col in Columns)
             {
-                DisplayBatchColumn(sheet, col.Data, col.StartRow, col.Column);
+                if (col.Data.Count == 0)
+                    continue;
+
+                DisplayBatchColumn(Sheet, col.Data, col.StartRow, col.Column);
             }
 
             foreach (RowData row in Rows)
             {
-                DisplayBatchRow(sheet, row.Data, row.Row, row.StartColumn);
+                if (row.Data.Count == 0)
+                    continue;
+
+                DisplayBatchRow(Sheet, row.Data, row.Row, row.StartColumn);
             }
         }
 
-        public void Run(ExcelVSTO.Worksheet sheet)
+        public void Run()
         {
             foreach (ColumnData col in Columns)
             {
                 for (int i = 0; i < col.Data.Count; i++)
                 {
-                    DisplayCell(sheet, col.Data[i], col.StartRow + i, col.Column);
+                    DisplayCell(Sheet, col.Data[i], col.StartRow + i, col.Column);
                 }
             }
 
@@ -150,7 +199,7 @@ namespace PricingSheet
                 int offSet = 0;
                 for (int i = 0; i < row.Data.Count; i++)
                 {
-                    DisplayCell(sheet, row.Data[i], row.Row, row.StartColumn + i + offSet);
+                    DisplayCell(Sheet, row.Data[i], row.Row, row.StartColumn + i + offSet);
                     if (row.Data[i].Offset != 0)
                         offSet += row.Data[i].Offset;
                 }
@@ -249,6 +298,59 @@ namespace PricingSheet
             this.Row = Row;
             this.StartColumn = StartColumn;
             this.Data = Data;
+        }
+    }
+
+    public class BlockData
+    {
+        public int StartRow { get; set; }
+        public int StartColumn { get; set; }
+        public List<string> Rows { get; set; }
+        public List<string> Columns { get; set; }
+        public object[,] Data { get; set; }
+
+        public BlockData(int StartRow, int StartColumn, List<string> Rows, List<string> Columns)
+        {
+            this.StartRow = StartRow;
+            this.StartColumn = StartColumn;
+            this.Rows = Rows;
+            this.Columns = Columns;
+            this.Data = BuildDisplayMatrix();
+        }
+
+        private object[,] BuildDisplayMatrix()
+        {
+            int rows = Rows.Count;
+            int cols = Columns.Count;
+
+            object[,] matrix = new object[rows, cols];
+
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    matrix[r, c] = "-";
+                }
+            }
+
+            return matrix;
+        }
+
+        public void UpdateMatrix(string rowName, string ColumnName, object value)
+        {
+            int r = Rows.IndexOf(rowName);
+            int c = Columns.IndexOf(ColumnName);
+
+            if (r >= 0 && c >= 0)
+                Data[r, c] = value;
+        }
+
+        public bool HasValue(string rowName, string ColumnName)
+        {
+            int r = Rows.IndexOf(rowName);
+            int c = Columns.IndexOf(ColumnName);
+
+            return Data[r, c].ToString() != "-";
         }
     }
 

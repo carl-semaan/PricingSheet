@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Bloomberglp.Blpapi;
 using ExcelVSTO = Microsoft.Office.Tools.Excel;
+using ExcelInterop = Microsoft.Office.Interop.Excel;
 
 namespace PricingSheet
 {
@@ -24,9 +26,11 @@ namespace PricingSheet
         public List<string> MaturityCodes { get; set; }
         public List<string> Fields { get; set; }
         public ExcelVSTO.Worksheet Sheet { get; set; }
+        private Flux _Flux;
 
-        public BloombergPipeline(ExcelVSTO.Worksheet Sheet, List<Flux.Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
+        public BloombergPipeline(Flux Flux, ExcelVSTO.Worksheet Sheet, List<Flux.Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
         {
+            _Flux = Flux;
             this.Sheet = Sheet;
             this.Instruments = Instruments;
             this.MaturityCodes = MaturityCodes;
@@ -77,18 +81,18 @@ namespace PricingSheet
                     {
                         try
                         {
-                            Log($"Waiting for next event... {ctr} {token.IsCancellationRequested}");
+                            //Log($"Waiting for next event... {ctr} {token.IsCancellationRequested}");
                             Event ev = session.NextEvent(timeoutMs);
                             if (ev.Type == Event.EventType.TIMEOUT)
                             {
-                                Log("Timeout event received, continuing...");
+                                //Log("Timeout event received, continuing...");
                                 continue;
                             }
 
-                            Log($"Received event: {ev.Type}");
+                            //Log($"Received event: {ev.Type}");
                             foreach (Message msg in ev)
                             {
-                                Log($"Event Type: {ev.Type},\nMessage: {msg}");
+                                //Log($"Event Type: {ev.Type},\nMessage: {msg}");
                                 if (msg.MessageType.Equals("MarketDataEvents") || msg.MessageType.Equals("MarketDataUpdate"))
                                 {
                                     string instrument = msg.CorrelationID.ToString().Substring(6);
@@ -103,21 +107,21 @@ namespace PricingSheet
                                                 effectiveInstruments.Add((instrument, field));
                                                 Log2(effectiveInstruments.Count.ToString());
                                                 if (!double.IsNaN(value))
-                                                    updateSheet(instrument, field, value);
+                                                    _Flux.UpdateMatrixSafe(instrument, field, value);
                                             }
                                         }
                                     }
                                 }
                                 else if (msg.MessageType.Equals("SubscriptionFailure") || msg.MessageType.Equals("SubscriptionTerminated") || msg.MessageType.Equals("SessionTerminated"))
                                 {
-                                    Log($"Subscription failure for {msg.CorrelationID}: {msg}");
+                                    //Log($"Subscription failure for {msg.CorrelationID}: {msg}");
                                 }
                             }
                             ctr++;
                         }
                         catch (Exception ex)
                         {
-                            Log($"Loop exception: {ex}");
+                            //Log($"Loop exception: {ex}");
                             System.Diagnostics.Debug.WriteLine($"Error: {ex.ToString()}");
                         }
                     }
@@ -130,13 +134,13 @@ namespace PricingSheet
             }
         }
 
-        private void Log(string message)
+        private static void Log(string message)
         {
             lock (LogLock)
                 File.AppendAllText(@"C:\Users\ghali\OneDrive\Desktop\Log.txt", $"{DateTime.Now}: {message}{Environment.NewLine}");
         }
 
-        private void Log2(string message)
+        private static void Log2(string message)
         {
             lock (LogLock)
                 File.AppendAllText(@"C:\Users\ghali\OneDrive\Desktop\Log2.txt", $"{DateTime.Now}: {message}{Environment.NewLine}");
