@@ -13,7 +13,12 @@ namespace PricingSheet
 {
     public class BloombergPipeline
     {
+        private static readonly int timeoutMs = 5000;
         private CancellationToken _token;
+
+        private static readonly object LogLock = new object();
+        private const string LogFilePath = @"C:\Users\Melanion\Desktop\Log.txt"; // Define once
+
         private SynchronizationContext _syncContext = SynchronizationContext.Current;
         public List<Flux.Instruments> Instruments { get; set; }
         public List<string> MaturityCodes { get; set; }
@@ -28,7 +33,7 @@ namespace PricingSheet
             this.Fields = Fields;
         }
 
-        public void Launch(CancellationToken token)
+        public async void Launch(CancellationToken token)
         {
             _token = token;
 
@@ -55,13 +60,31 @@ namespace PricingSheet
                     session.Subscribe(subscriptions);
                     System.Diagnostics.Debug.WriteLine("Subscribed to live data for multiple instruments/fields.");
 
+
+                    //while (!_token.IsCancellationRequested)
+                    //{
+                    //    await Task.Delay(2000);
+                    //    session.Unsubscribe(subscriptions);
+                    //    session.Subscribe(subscriptions);
+                    //    Log(session.NextEvent().ToString());
+                    //}
+
+
                     // Event loop
                     int ctr = 0;
+                    List<(string, string)> effectiveInstruments = new List<(string, string)>();
                     while (!_token.IsCancellationRequested)
                     {
-                        try {
+                        try
+                        {
                             Log($"Waiting for next event... {ctr} {token.IsCancellationRequested}");
-                            Event ev = session.NextEvent();
+                            Event ev = session.NextEvent(timeoutMs);
+                            if (ev.Type == Event.EventType.TIMEOUT)
+                            {
+                                Log("Timeout event received, continuing...");
+                                continue;
+                            }
+
                             Log($"Received event: {ev.Type}");
                             foreach (Message msg in ev)
                             {
@@ -77,16 +100,17 @@ namespace PricingSheet
                                             if (element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.FLOAT64 || element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.INT32)
                                             {
                                                 var value = msg.GetElementAsFloat64(field);
+                                                effectiveInstruments.Add((instrument, field));
+                                                Log2(effectiveInstruments.Count.ToString());
                                                 if (!double.IsNaN(value))
                                                     updateSheet(instrument, field, value);
                                             }
                                         }
                                     }
                                 }
-                                else if(msg.MessageType.Equals("SubscriptionFailure") || msg.MessageType.Equals("SubscriptionTerminated"))
+                                else if (msg.MessageType.Equals("SubscriptionFailure") || msg.MessageType.Equals("SubscriptionTerminated") || msg.MessageType.Equals("SessionTerminated"))
                                 {
                                     Log($"Subscription failure for {msg.CorrelationID}: {msg}");
-                                    return;
                                 }
                             }
                             ctr++;
@@ -108,7 +132,14 @@ namespace PricingSheet
 
         private void Log(string message)
         {
-            File.AppendAllText(@"C:\Users\\Melanion\Desktop\Log.txt", $"{DateTime.Now}: {message}{Environment.NewLine}");
+            lock (LogLock)
+                File.AppendAllText(@"C:\Users\ghali\OneDrive\Desktop\Log.txt", $"{DateTime.Now}: {message}{Environment.NewLine}");
+        }
+
+        private void Log2(string message)
+        {
+            lock (LogLock)
+                File.AppendAllText(@"C:\Users\ghali\OneDrive\Desktop\Log2.txt", $"{DateTime.Now}: {message}{Environment.NewLine}");
         }
 
         private List<Subscription> GetSubscriptions()
