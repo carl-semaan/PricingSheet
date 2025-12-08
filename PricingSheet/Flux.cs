@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static PricingSheet.Flux;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
 
@@ -21,10 +22,15 @@ namespace PricingSheet
         public BlockData InstrumentDisplayBlock;
         private SheetDisplay SheetDisplay;
         private readonly object _matrixLock = new object();
+        private List<Instruments> SheetInstruments { get; set; }
+        private List<Maturities> SheetMaturities { get; set; }
+        private List<Fields> SheetFields { get; set; }
+        public static Flux FluxInstance { get; private set; }
         private void Sheet3_Startup(object sender, System.EventArgs e)
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
+            FluxInstance = this;
             RunInitialization();
             sw.Stop();
         }
@@ -69,19 +75,20 @@ namespace PricingSheet
             List<RowData> rowData = new List<RowData>();
 
             JSONReader reader = new JSONReader(@"G:\Shared drives\Arbitrage\Tools\9.Pricing Sheets", "PricingSheetData.json");
-            List<Instruments> instruments = reader.LoadClass<Instruments>(nameof(Instruments));
-            List<Maturities> maturities = reader.LoadClass<Maturities>(nameof(Maturities));
-            List<Fields> fields = reader.LoadClass<Fields>(nameof(Fields));
+
+            SheetInstruments = reader.LoadClass<Instruments>(nameof(Instruments));
+            SheetMaturities = reader.LoadClass<Maturities>(nameof(Maturities));
+            SheetFields = reader.LoadClass<Fields>(nameof(Fields));
 
             // Merging Cells
-            for (int i = 0; i < maturities.Count * 2; i += 2)
+            for (int i = 0; i < SheetMaturities.Count * 2; i += 2)
             {
                 new CellMerge(2, 2, i + 4, i + 5).Run(vstoSheet);
                 new CellMerge(1, 1, i + 4, i + 5).Run(vstoSheet);
             }
 
             // Setting the Upper Headers
-            (List<DataCell> maturityCodes, List<DataCell> maturitiesString) = UpperHeaders(maturities, 2, 4);
+            (List<DataCell> maturityCodes, List<DataCell> maturitiesString) = UpperHeaders(SheetMaturities, 2, 4);
             rowData.Add(new RowData(1, 4, maturityCodes));
             rowData.Add(new RowData(2, 4, maturitiesString));
 
@@ -89,36 +96,36 @@ namespace PricingSheet
             rowData.Clear();
 
             // Setting the Headers
-            List<DataCell> Headers = GetHeaders(maturities, fields);
+            List<DataCell> Headers = GetHeaders(SheetMaturities, SheetFields);
             List<RowData> Rows = new List<RowData>();
             rowData.Add(new RowData(3, 1, Headers));
 
             // Setting the Data
-            columnData.Add(new ColumnData(4, 1, instruments.Select(x => new DataCell(x.Ticker, IsBold: true, IsCentered: true)).ToList()));
-            columnData.Add(new ColumnData(4, 2, instruments.Select(x => new DataCell(x.Underlying, IsCentered: true)).ToList()));
-            columnData.Add(new ColumnData(4, 3, instruments.Select(x => new DataCell(x.ShortName, IsCentered: true)).ToList()));
-            columnData.Add(new ColumnData(4, 4 + maturities.Count * 2, instruments.Select(x => new DataCell(x.ExchangeCode, IsCentered: true)).ToList()));
-            columnData.Add(new ColumnData(4, 5 + maturities.Count * 2, instruments.Select(x => new DataCell(x.Currency, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 1, SheetInstruments.Select(x => new DataCell(x.Ticker, IsBold: true, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 2, SheetInstruments.Select(x => new DataCell(x.Underlying, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 3, SheetInstruments.Select(x => new DataCell(x.ShortName, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 4 + SheetMaturities.Count * 2, SheetInstruments.Select(x => new DataCell(x.ExchangeCode, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 5 + SheetMaturities.Count * 2, SheetInstruments.Select(x => new DataCell(x.Currency, IsCentered: true)).ToList()));
 
             // Setting the Display Block
-            InstrumentDisplayBlock = new BlockData(4, 4, instruments.Select(x => x.Ticker).ToList(), maturities.SelectMany(m => fields.Select(f => $"{m.MaturityCode}_{f.Field}")).ToList());
+            InstrumentDisplayBlock = new BlockData(4, 4, SheetInstruments.Select(x => x.Ticker).ToList(), SheetMaturities.SelectMany(m => SheetFields.Select(f => $"{m.MaturityCode}_{f.Field}")).ToList());
 
             // Display Sheet Values
             SheetDisplay = new SheetDisplay(vstoSheet, columnData, rowData, InstrumentDisplayBlock);
             SheetDisplay.RunDisplay();
 
             // Initialize Column and Row Maps
-            InitializeDictionaries(interopSheet, maturities.Select(x => x.MaturityCode).ToList(), fields.Select(x => x.Field).ToList(), instruments.Select(x => x.Ticker).ToList());
+            InitializeDictionaries(interopSheet, SheetMaturities.Select(x => x.MaturityCode).ToList(), SheetFields.Select(x => x.Field).ToList(), SheetInstruments.Select(x => x.Ticker).ToList());
 
             // Launch Bloomberg Pipeline
             BloombergPipeline pipeline = new BloombergPipeline(
                 this,
                 vstoSheet,
-                instruments,
-                maturities.Select(x => x.MaturityCode).ToList(),
-                fields.Select(x => x.Field).ToList()
+                SheetInstruments,
+                SheetMaturities.Select(x => x.MaturityCode).ToList(),
+                SheetFields.Select(x => x.Field).ToList()
             );
-            Task.Run(() => pipeline.Launch(BloombegCts.Token));
+            Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
 
             // Launch Auto Display Update
             StartAutoUpdate();
@@ -274,6 +281,47 @@ namespace PricingSheet
             {
                 InstrumentDisplayBlock.UpdateMatrix(ticker, Maturity_Field, value);
             }
+        }
+
+        public void UpdateDisplay(Instruments newInstrument)
+        {
+            var interopSheet = Globals.ThisWorkbook.Worksheets["Flux"];
+            var vstoSheet = Globals.Factory.GetVstoObject(interopSheet);
+
+            SheetInstruments.Add(newInstrument);
+
+            // Update Block Data 
+            lock (_matrixLock)
+            {
+                List<string> instruments = InstrumentDisplayBlock.Rows.ToList();
+                instruments.Add(newInstrument.Ticker);
+
+                InstrumentDisplayBlock = new BlockData(4, 4, instruments,InstrumentDisplayBlock.Columns);
+            }
+
+            // Update Sheet Display
+            List<ColumnData> columnData = SheetDisplay.Columns.ToList();
+            columnData[0] = new ColumnData(columnData[0].StartRow, columnData[0].Column, columnData[0].Data.Append(new DataCell(newInstrument.Ticker, IsBold: true, IsCentered: true)).ToList());
+            columnData[1] = new ColumnData(columnData[1].StartRow, columnData[1].Column, columnData[1].Data.Append(new DataCell(newInstrument.Underlying, IsBold: true, IsCentered: true)).ToList());
+            columnData[2] = new ColumnData(columnData[2].StartRow, columnData[2].Column, columnData[2].Data.Append(new DataCell(newInstrument.ShortName, IsBold: true, IsCentered: true)).ToList());
+            columnData[3] = new ColumnData(columnData[3].StartRow, columnData[3].Column, columnData[3].Data.Append(new DataCell(newInstrument.ExchangeCode, IsBold: true, IsCentered: true)).ToList());
+            columnData[4] = new ColumnData(columnData[4].StartRow, columnData[4].Column, columnData[4].Data.Append(new DataCell(newInstrument.Currency, IsBold: true, IsCentered: true)).ToList());
+
+            SheetDisplay.Columns = columnData;
+            SheetDisplay.RunDisplay();
+
+            // Cancel Old Bloomberg Pipeline
+            BloombegCts.Cancel();
+
+            // Update Bloomberg Pipeline
+            BloombergPipeline pipeline = new BloombergPipeline(
+                this,
+                vstoSheet,
+                SheetInstruments,
+                SheetMaturities.Select(x => x.MaturityCode).ToList(),
+                SheetFields.Select(x => x.Field).ToList()
+            );
+            Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
         }
         #endregion
     }
