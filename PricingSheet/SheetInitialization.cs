@@ -17,7 +17,6 @@ namespace PricingSheet
         public ExcelVSTO.Worksheet Sheet { get; set; }
         public string Name { get; set; }
         public bool ClearOnStartUp { get; set; }
-        public List<SheetButton> SheetButtons { get; set; }
         public int FreezeRow { get; set; }
         public int FreezeColumn { get; set; }
 
@@ -28,7 +27,6 @@ namespace PricingSheet
             this.Sheet = Sheet;
             this.Name = Name;
             this.ClearOnStartUp = ClearOnStartUp;
-            this.SheetButtons = SheetButtons;
             this.FreezeRow = FreezeRow;
             this.FreezeColumn = FreezeColumn;
         }
@@ -42,24 +40,8 @@ namespace PricingSheet
                 if (ClearOnStartUp)
                     Sheet.Cells.Clear();
 
-                foreach (var btn in SheetButtons)
-                    AddButton(btn);
-
                 FreezePanes();
             }
-        }
-
-        private void AddButton(SheetButton btn)
-        {
-            ExcelInterop.Range cell = Sheet.Cells[btn.Row, btn.Column] as ExcelInterop.Range;
-
-            int left = (int)cell.Left;
-            int top = (int)cell.Top;
-
-            var button = Sheet.Controls.AddButton(left, top, btn.Width, btn.Height, btn.Name);
-            button.Text = btn.Name;
-
-            button.Click += (s, e) => btn.Action();
         }
 
         private void FreezePanes()
@@ -86,47 +68,29 @@ namespace PricingSheet
 
     }
 
-    public class SheetButton
-    {
-        public string Name { get; set; }
-        public int Row { get; set; }
-        public int Column { get; set; }
-        public string Color { get; set; }
-        public System.Action Action { get; set; }
-        public int Width { get; set; }
-        public int Height { get; set; }
-
-        public SheetButton() { }
-
-        public SheetButton(string Name, int Row, int Column, string Color, System.Action Action, int Width = 100, int Height = 30)
-        {
-            this.Name = Name;
-            this.Row = Row;
-            this.Column = Column;
-            this.Color = Color;
-            this.Action = Action;
-            this.Width = Width;
-            this.Height = Height;
-        }
-    }
-
+    #region Sheet Visual Elements
     public class SheetDisplay
     {
         public ExcelVSTO.Worksheet Sheet { get; set; }
         public List<ColumnData> Columns { get; set; }
         public List<RowData> Rows { get; set; }
         public BlockData Block { get; set; }
+        public List<SheetButton> SheetButtons { get; set; }
 
-        public SheetDisplay(ExcelVSTO.Worksheet Sheet, List<ColumnData> Columns, List<RowData> Rows, BlockData Block = null)
+        public SheetDisplay(ExcelVSTO.Worksheet Sheet, List<ColumnData> Columns = null, List<RowData> Rows = null, BlockData Block = null, List<SheetButton> sheetButtons = null)
         {
             this.Sheet = Sheet;
-            this.Columns = Columns;
-            this.Rows = Rows;
+            this.Columns = Columns ?? new List<ColumnData>();
+            this.Rows = Rows ?? new List<RowData>();
             this.Block = Block;
+            SheetButtons = sheetButtons ?? new List<SheetButton>();
         }
 
         public void RunDisplay(bool batch = true)
         {
+            foreach (var btn in SheetButtons)
+                AddButton(btn);
+
             if (batch)
                 RunBatch();
             else
@@ -134,6 +98,19 @@ namespace PricingSheet
 
             if (Block != null)
                 RunBlock();
+        }
+
+        private void AddButton(SheetButton btn)
+        {
+            ExcelInterop.Range cell = Sheet.Cells[btn.Row, btn.Column] as ExcelInterop.Range;
+
+            int left = (int)cell.Left;
+            int top = (int)cell.Top;
+
+            var button = Sheet.Controls.AddButton(left, top, btn.Width, btn.Height, btn.Name);
+            button.Text = btn.Name;
+
+            button.Click += (s, e) => btn.Action();
         }
 
         public void RunBlock()
@@ -277,6 +254,53 @@ namespace PricingSheet
         }
     }
 
+    public class SheetButton
+    {
+        public string Name { get; set; }
+        public int Row { get; set; }
+        public int Column { get; set; }
+        public string Color { get; set; }
+        public System.Action Action { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+
+        public SheetButton() { }
+
+        public SheetButton(string Name, int Row, int Column, string Color, System.Action Action, int Width = 100, int Height = 30)
+        {
+            this.Name = Name;
+            this.Row = Row;
+            this.Column = Column;
+            this.Color = Color;
+            this.Action = Action;
+            this.Width = Width;
+            this.Height = Height;
+        }
+    }
+
+    public class CellMerge
+    {
+        public int StartRow { get; set; }
+        public int EndRow { get; set; }
+        public int StartColumn { get; set; }
+        public int EndColumn { get; set; }
+        public CellMerge(int StartRow, int EndRow, int StartColumn, int EndColumn)
+        {
+            this.StartRow = StartRow;
+            this.EndRow = EndRow;
+            this.StartColumn = StartColumn;
+            this.EndColumn = EndColumn;
+        }
+
+        public void Run(ExcelVSTO.Worksheet sheet)
+        {
+            var range = sheet.Range[sheet.Cells[StartRow, StartColumn], sheet.Cells[EndRow, EndColumn]] as ExcelInterop.Range;
+            range.Merge();
+        }
+    }
+    #endregion
+
+    #region Data Groups
     public class ColumnData
     {
         public int StartRow { get; set; }
@@ -379,25 +403,6 @@ namespace PricingSheet
             this.FontSize = FontSize;
         }
     }
+    #endregion
 
-    public class CellMerge
-    {
-        public int StartRow { get; set; }
-        public int EndRow { get; set; }
-        public int StartColumn { get; set; }
-        public int EndColumn { get; set; }
-        public CellMerge(int StartRow, int EndRow, int StartColumn, int EndColumn)
-        {
-            this.StartRow = StartRow;
-            this.EndRow = EndRow;
-            this.StartColumn = StartColumn;
-            this.EndColumn = EndColumn;
-        }
-
-        public void Run(ExcelVSTO.Worksheet sheet)
-        {
-            var range = sheet.Range[sheet.Cells[StartRow, StartColumn], sheet.Cells[EndRow, EndColumn]] as ExcelInterop.Range;
-            range.Merge();
-        }
-    }
 }
