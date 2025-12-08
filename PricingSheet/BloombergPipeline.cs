@@ -18,10 +18,6 @@ namespace PricingSheet
         private static readonly int timeoutMs = 5000;
         private CancellationToken _token;
 
-        private static readonly object LogLock = new object();
-        private const string LogFilePath = @"C:\Users\Melanion\Desktop\Log.txt"; // Define once
-
-        private SynchronizationContext _syncContext = SynchronizationContext.Current;
         public List<Flux.Instruments> Instruments { get; set; }
         public List<string> MaturityCodes { get; set; }
         public List<string> Fields { get; set; }
@@ -37,14 +33,14 @@ namespace PricingSheet
             this.Fields = Fields;
         }
 
-        public async void Launch(CancellationToken token)
+        public void Launch(CancellationToken token)
         {
             _token = token;
 
             SessionOptions options = new SessionOptions
             {
-                ServerHost = "localhost", // Bloomberg Terminal host
-                ServerPort = 8194          // Default API port
+                ServerHost = "localhost",
+                ServerPort = 8194        
             };
 
             try
@@ -64,35 +60,23 @@ namespace PricingSheet
                     session.Subscribe(subscriptions);
                     System.Diagnostics.Debug.WriteLine("Subscribed to live data for multiple instruments/fields.");
 
-
-                    //while (!_token.IsCancellationRequested)
-                    //{
-                    //    await Task.Delay(2000);
-                    //    session.Unsubscribe(subscriptions);
-                    //    session.Subscribe(subscriptions);
-                    //    Log(session.NextEvent().ToString());
-                    //}
-
-
                     // Event loop
-                    int ctr = 0;
-                    List<(string, string)> effectiveInstruments = new List<(string, string)>();
                     while (!_token.IsCancellationRequested)
                     {
                         try
                         {
-                            //Log($"Waiting for next event... {ctr} {token.IsCancellationRequested}");
+                            System.Diagnostics.Debug.WriteLine($"Waiting for next event... ");
                             Event ev = session.NextEvent(timeoutMs);
                             if (ev.Type == Event.EventType.TIMEOUT)
                             {
-                                //Log("Timeout event received, continuing...");
+                                System.Diagnostics.Debug.WriteLine("Timeout event received, continuing...");
                                 continue;
                             }
 
-                            //Log($"Received event: {ev.Type}");
+                            System.Diagnostics.Debug.WriteLine($"Received event: {ev.Type}");
                             foreach (Message msg in ev)
                             {
-                                //Log($"Event Type: {ev.Type},\nMessage: {msg}");
+                                System.Diagnostics.Debug.WriteLine($"Event Type: {ev.Type},\nMessage: {msg}");
                                 if (msg.MessageType.Equals("MarketDataEvents") || msg.MessageType.Equals("MarketDataUpdate"))
                                 {
                                     string instrument = msg.CorrelationID.ToString().Substring(6);
@@ -104,8 +88,6 @@ namespace PricingSheet
                                             if (element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.FLOAT64 || element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.INT32)
                                             {
                                                 var value = msg.GetElementAsFloat64(field);
-                                                effectiveInstruments.Add((instrument, field));
-                                                Log2(effectiveInstruments.Count.ToString());
                                                 if (!double.IsNaN(value))
                                                     _Flux.UpdateMatrixSafe(instrument, field, value);
                                             }
@@ -114,14 +96,12 @@ namespace PricingSheet
                                 }
                                 else if (msg.MessageType.Equals("SubscriptionFailure") || msg.MessageType.Equals("SubscriptionTerminated") || msg.MessageType.Equals("SessionTerminated"))
                                 {
-                                    //Log($"Subscription failure for {msg.CorrelationID}: {msg}");
+                                    System.Diagnostics.Debug.WriteLine($"Subscription failure for {msg.CorrelationID}: {msg}");
                                 }
                             }
-                            ctr++;
                         }
                         catch (Exception ex)
                         {
-                            //Log($"Loop exception: {ex}");
                             System.Diagnostics.Debug.WriteLine($"Error: {ex.ToString()}");
                         }
                     }
@@ -129,21 +109,8 @@ namespace PricingSheet
             }
             catch (Exception ex)
             {
-                Log($"outer exception: {ex}");
                 System.Diagnostics.Debug.WriteLine($"Error: {ex.ToString()}");
             }
-        }
-
-        private static void Log(string message)
-        {
-            lock (LogLock)
-                File.AppendAllText(@"C:\Users\ghali\OneDrive\Desktop\Log.txt", $"{DateTime.Now}: {message}{Environment.NewLine}");
-        }
-
-        private static void Log2(string message)
-        {
-            lock (LogLock)
-                File.AppendAllText(@"C:\Users\ghali\OneDrive\Desktop\Log2.txt", $"{DateTime.Now}: {message}{Environment.NewLine}");
         }
 
         private List<Subscription> GetSubscriptions()
@@ -163,6 +130,28 @@ namespace PricingSheet
             return subscriptions;
         }
 
+        public void LaunchOfflineTest(CancellationToken token)
+        {
+            _token = token;
+            Random rand = new Random();
+            while (!_token.IsCancellationRequested)
+            {
+                foreach (var instrument in Instruments)
+                {
+                    foreach (var maturity in MaturityCodes)
+                    {
+                        string instr = $"{instrument.Ticker}={maturity} {instrument.ExchangeCode} {instrument.InstrumentType}";
+                        foreach (var field in Fields)
+                        {
+                            double value = Math.Round(rand.NextDouble() * 100, 2);
+                            _Flux.UpdateMatrixSafe(instr, field, value);
+                        }
+                    }
+                }
+                Thread.Sleep(1000);
+            }
+        } 
+
         private void updateSheet(string instrument, string field, double value)
         {
             string[] parts = instrument.Split('=');
@@ -171,52 +160,5 @@ namespace PricingSheet
 
             SheetDisplay.DisplayCell(Sheet, new DataCell(value.ToString(), IsCentered: true), row, col);
         }
-
-        //double bid = msg.HasElement("BID") ? msg.GetElementAsFloat64("BID") : double.NaN;
-        //double ask = msg.HasElement("ASK") ? msg.GetElementAsFloat64("ASK") : double.NaN;
-
-        //if (!double.IsNaN(bid) || !double.IsNaN(ask))
-        //    System.Diagnostics.Debug.WriteLine($"Instrument: {instrument}, Bid: {bid}, Ask: {ask}");
-
-        //if (instrumentDataList.Where(x => x.Instrument == instrument).Any())
-        //    instrumentDataList.Where(x => x.Instrument == instrument).First().update(instrument, bid, ask);
-        //else
-        //    instrumentDataList.Add(new InstrumentData(instrument, bid, ask));
-
-        //System.Threading.Thread.Sleep(1000);
-
-
-        //private class InstrumentData
-        //{
-        //    public string Instrument { get; set; }
-        //    public double Bid { get; set; }
-        //    public double Ask { get; set; }
-
-        //    public InstrumentData()
-        //    {
-        //        Instrument = string.Empty;
-        //        Bid = double.NaN;
-        //        Ask = double.NaN;
-        //    }
-
-        //    public InstrumentData(string instrument, double bid, double ask)
-        //    {
-        //        Instrument = instrument;
-        //        Bid = bid;
-        //        Ask = ask;
-        //    }
-
-        //    public void update(string instrument, double bid, double ask)
-        //    {
-        //        if (!string.IsNullOrEmpty(instrument))
-        //            Instrument = instrument;
-        //        if (!double.IsNaN(bid))
-        //            Bid = bid;
-        //        if (!double.IsNaN(ask))
-        //            Ask = ask;
-        //    }
-
-        //}
-
     }
 }

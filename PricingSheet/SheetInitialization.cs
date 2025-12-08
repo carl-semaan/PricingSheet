@@ -147,22 +147,26 @@ namespace PricingSheet
             if (rows == 0 || cols == 0)
                 return;
 
-            ExcelInterop.Application app = Sheet.Application;
-            bool prevUpdate = app.ScreenUpdating;
-            app.ScreenUpdating = false;
-
             try
             {
-                ExcelInterop.Range topLeft = Sheet.Cells[Block.StartRow, Block.StartColumn];
-                ExcelInterop.Range bottomRight = Sheet.Cells[Block.StartRow + rows - 1, Block.StartColumn + cols - 1];
-                ExcelInterop.Range writeRange = Sheet.Range[topLeft, bottomRight];
+                ExcelInterop.Application app = Sheet.Application;
+                bool prevUpdate = app.ScreenUpdating;
+                app.ScreenUpdating = false;
 
-                writeRange.Value2 = Block.Data;
+                try
+                {
+                    ExcelInterop.Range topLeft = Sheet.Cells[Block.StartRow, Block.StartColumn];
+                    ExcelInterop.Range bottomRight = Sheet.Cells[Block.StartRow + rows - 1, Block.StartColumn + cols - 1];
+                    ExcelInterop.Range writeRange = Sheet.Range[topLeft, bottomRight];
+
+                    writeRange.Value2 = Block.Data;
+                }
+                finally
+                {
+                    app.ScreenUpdating = prevUpdate;
+                }
             }
-            finally
-            {
-                app.ScreenUpdating = prevUpdate;
-            }
+            catch (Exception) { }
         }
 
         public void RunBatch()

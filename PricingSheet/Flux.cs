@@ -123,15 +123,6 @@ namespace PricingSheet
             // Launch Auto Display Update
             StartAutoUpdate();
 
-            //SheetButton sheetButton = new SheetButton(
-            //    "Say Hello",
-            //    1,
-            //    1,
-            //    "Blue",
-            //    () => System.Windows.Forms.MessageBox.Show("Welcome to the new Pricing Sheet!!!"));
-
-            //List<SheetButton> ButtonsList = new List<SheetButton>();
-            //ButtonsList.Add(sheetButton);
         }
 
         private static (List<DataCell>, List<DataCell>) UpperHeaders(List<Maturities> maturities, int row, int column)
@@ -205,7 +196,7 @@ namespace PricingSheet
         }
         #endregion
 
-        #region SheetData
+        #region Sheet Data
         public class Instruments
         {
             public string Ticker { get; set; }
