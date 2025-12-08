@@ -198,6 +198,16 @@ namespace PricingSheet.Forms
             var flux = Flux.FluxInstance;
             flux.UpdateDisplay(newInstrument);
 
+            JSONReader reader = new JSONReader(Constants.FolderPath, Constants.JSONFileName);
+            Flux.SheetUniverse sheetUniverse = new Flux.SheetUniverse();
+            sheetUniverse.Instruments = reader.LoadClass<Flux.Instruments>(nameof(Flux.Instruments));
+            sheetUniverse.Maturities = reader.LoadClass<Flux.Maturities>(nameof(Flux.Maturities));
+            sheetUniverse.Fields = reader.LoadClass<Flux.Fields>(nameof(Flux.Fields));
+
+            sheetUniverse.Instruments.Add(newInstrument);
+
+            reader.SaveJSON<Flux.SheetUniverse>(sheetUniverse);
+
             // Close form
             this.DialogResult = DialogResult.OK;
             this.Close();

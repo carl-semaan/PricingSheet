@@ -22,9 +22,7 @@ namespace PricingSheet
         public BlockData InstrumentDisplayBlock;
         private SheetDisplay SheetDisplay;
         private readonly object _matrixLock = new object();
-        private List<Instruments> SheetInstruments { get; set; }
-        private List<Maturities> SheetMaturities { get; set; }
-        private List<Fields> SheetFields { get; set; }
+        private SheetUniverse FluxSheetUniverse = new SheetUniverse();
         public static Flux FluxInstance { get; private set; }
         private void Sheet3_Startup(object sender, System.EventArgs e)
         {
@@ -74,21 +72,21 @@ namespace PricingSheet
             List<ColumnData> columnData = new List<ColumnData>();
             List<RowData> rowData = new List<RowData>();
 
-            JSONReader reader = new JSONReader(@"G:\Shared drives\Arbitrage\Tools\9.Pricing Sheets", "PricingSheetData.json");
+            JSONReader reader = new JSONReader(Constants.FolderPath, Constants.JSONFileName);
 
-            SheetInstruments = reader.LoadClass<Instruments>(nameof(Instruments));
-            SheetMaturities = reader.LoadClass<Maturities>(nameof(Maturities));
-            SheetFields = reader.LoadClass<Fields>(nameof(Fields));
+            FluxSheetUniverse.Instruments = reader.LoadClass<Instruments>(nameof(Instruments));
+            FluxSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities));
+            FluxSheetUniverse.Fields = reader.LoadClass<Fields>(nameof(Fields));
 
             // Merging Cells
-            for (int i = 0; i < SheetMaturities.Count * 2; i += 2)
+            for (int i = 0; i < FluxSheetUniverse.Maturities.Count * 2; i += 2)
             {
                 new CellMerge(2, 2, i + 4, i + 5).Run(vstoSheet);
                 new CellMerge(1, 1, i + 4, i + 5).Run(vstoSheet);
             }
 
             // Setting the Upper Headers
-            (List<DataCell> maturityCodes, List<DataCell> maturitiesString) = UpperHeaders(SheetMaturities, 2, 4);
+            (List<DataCell> maturityCodes, List<DataCell> maturitiesString) = UpperHeaders(FluxSheetUniverse.Maturities, 2, 4);
             rowData.Add(new RowData(1, 4, maturityCodes));
             rowData.Add(new RowData(2, 4, maturitiesString));
 
@@ -96,39 +94,39 @@ namespace PricingSheet
             rowData.Clear();
 
             // Setting the Headers
-            List<DataCell> Headers = GetHeaders(SheetMaturities, SheetFields);
+            List<DataCell> Headers = GetHeaders(FluxSheetUniverse.Maturities, FluxSheetUniverse.Fields);
             List<RowData> Rows = new List<RowData>();
             rowData.Add(new RowData(3, 1, Headers));
 
             // Setting the Data
-            columnData.Add(new ColumnData(4, 1, SheetInstruments.Select(x => new DataCell(x.Ticker, IsBold: true, IsCentered: true)).ToList()));
-            columnData.Add(new ColumnData(4, 2, SheetInstruments.Select(x => new DataCell(x.Underlying, IsCentered: true)).ToList()));
-            columnData.Add(new ColumnData(4, 3, SheetInstruments.Select(x => new DataCell(x.ShortName, IsCentered: true)).ToList()));
-            columnData.Add(new ColumnData(4, 4 + SheetMaturities.Count * 2, SheetInstruments.Select(x => new DataCell(x.ExchangeCode, IsCentered: true)).ToList()));
-            columnData.Add(new ColumnData(4, 5 + SheetMaturities.Count * 2, SheetInstruments.Select(x => new DataCell(x.Currency, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 1, FluxSheetUniverse.Instruments.Select(x => new DataCell(x.Ticker, IsBold: true, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 2, FluxSheetUniverse.Instruments.Select(x => new DataCell(x.Underlying, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 3, FluxSheetUniverse.Instruments.Select(x => new DataCell(x.ShortName, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 4 + FluxSheetUniverse.Maturities.Count * 2, FluxSheetUniverse.Instruments.Select(x => new DataCell(x.ExchangeCode, IsCentered: true)).ToList()));
+            columnData.Add(new ColumnData(4, 5 + FluxSheetUniverse.Maturities.Count * 2, FluxSheetUniverse.Instruments.Select(x => new DataCell(x.Currency, IsCentered: true)).ToList()));
 
             // Setting the Display Block
-            InstrumentDisplayBlock = new BlockData(4, 4, SheetInstruments.Select(x => x.Ticker).ToList(), SheetMaturities.SelectMany(m => SheetFields.Select(f => $"{m.MaturityCode}_{f.Field}")).ToList());
+            InstrumentDisplayBlock = new BlockData(4, 4, FluxSheetUniverse.Instruments.Select(x => x.Ticker).ToList(), FluxSheetUniverse.Maturities.SelectMany(m => FluxSheetUniverse.Fields.Select(f => $"{m.MaturityCode}_{f.Field}")).ToList());
 
             // Display Sheet Values
             SheetDisplay = new SheetDisplay(vstoSheet, columnData, rowData, InstrumentDisplayBlock);
             SheetDisplay.RunDisplay();
 
             // Initialize Column and Row Maps
-            InitializeDictionaries(interopSheet, SheetMaturities.Select(x => x.MaturityCode).ToList(), SheetFields.Select(x => x.Field).ToList(), SheetInstruments.Select(x => x.Ticker).ToList());
+            InitializeDictionaries(interopSheet, FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(), FluxSheetUniverse.Fields.Select(x => x.Field).ToList(), FluxSheetUniverse.Instruments.Select(x => x.Ticker).ToList());
 
             // Launch Bloomberg Pipeline
             BloombergPipeline pipeline = new BloombergPipeline(
                 this,
                 vstoSheet,
-                SheetInstruments,
-                SheetMaturities.Select(x => x.MaturityCode).ToList(),
-                SheetFields.Select(x => x.Field).ToList()
+                FluxSheetUniverse.Instruments,
+                FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(),
+                FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
             );
             Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
 
             // Launch Auto Display Update
-            StartAutoUpdate();
+            StartAutoUpdate(BloombegCts.Token);
 
         }
 
@@ -204,6 +202,20 @@ namespace PricingSheet
         #endregion
 
         #region Sheet Data
+        public class SheetUniverse
+        {
+            public List<Instruments> Instruments { get; set; }
+            public List<Maturities> Maturities { get; set; }
+            public List<Fields> Fields { get; set; }
+            public SheetUniverse() { }
+            public SheetUniverse(List<Instruments> instruments, List<Maturities> maturities, List<Fields> fields)
+            {
+                Instruments = instruments;
+                Maturities = maturities;
+                Fields = fields;
+            }
+        }
+
         public class Instruments
         {
             public string Ticker { get; set; }
@@ -226,7 +238,7 @@ namespace PricingSheet
             }
         }
 
-        internal class Maturities
+        public class Maturities
         {
             public int Maturity { get; set; }
             public string MaturityCode { get; set; }
@@ -240,7 +252,7 @@ namespace PricingSheet
             }
         }
 
-        internal class Fields
+        public class Fields
         {
             public string Field { get; set; }
 
@@ -256,8 +268,11 @@ namespace PricingSheet
         #region Sheet Auto Display Update
         private System.Windows.Forms.Timer uiTimer = new System.Windows.Forms.Timer();
 
-        public void StartAutoUpdate()
+        public void StartAutoUpdate(CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+                return;
+
             uiTimer.Interval = 500;
             uiTimer.Tick += (s, e) =>
             {
@@ -288,7 +303,7 @@ namespace PricingSheet
             var interopSheet = Globals.ThisWorkbook.Worksheets["Flux"];
             var vstoSheet = Globals.Factory.GetVstoObject(interopSheet);
 
-            SheetInstruments.Add(newInstrument);
+            FluxSheetUniverse.Instruments.Add(newInstrument);
 
             // Update Block Data 
             lock (_matrixLock)
@@ -296,7 +311,7 @@ namespace PricingSheet
                 List<string> instruments = InstrumentDisplayBlock.Rows.ToList();
                 instruments.Add(newInstrument.Ticker);
 
-                InstrumentDisplayBlock = new BlockData(4, 4, instruments,InstrumentDisplayBlock.Columns);
+                InstrumentDisplayBlock = new BlockData(4, 4, instruments, InstrumentDisplayBlock.Columns);
             }
 
             // Update Sheet Display
@@ -308,18 +323,22 @@ namespace PricingSheet
             columnData[4] = new ColumnData(columnData[4].StartRow, columnData[4].Column, columnData[4].Data.Append(new DataCell(newInstrument.Currency, IsBold: true, IsCentered: true)).ToList());
 
             SheetDisplay.Columns = columnData;
+            SheetDisplay.Block = InstrumentDisplayBlock;
             SheetDisplay.RunDisplay();
 
             // Cancel Old Bloomberg Pipeline
             BloombegCts.Cancel();
 
+            // Create a new cancelation token
+            BloombegCts = new CancellationTokenSource();
+
             // Update Bloomberg Pipeline
             BloombergPipeline pipeline = new BloombergPipeline(
                 this,
                 vstoSheet,
-                SheetInstruments,
-                SheetMaturities.Select(x => x.MaturityCode).ToList(),
-                SheetFields.Select(x => x.Field).ToList()
+                FluxSheetUniverse.Instruments,
+                FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(),
+                FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
             );
             Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
         }

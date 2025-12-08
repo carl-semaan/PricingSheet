@@ -42,13 +42,23 @@ namespace PricingSheet
                 throw new FileNotFoundException(fullPath);
 
             string jsonContent = File.ReadAllText(fullPath);
-            var jObject = JObject.Parse(jsonContent); 
+            var jObject = JObject.Parse(jsonContent);
             var jArray = jObject[targetName] as JArray;
 
             if (jArray == null)
                 return new List<T>();
 
             return jArray.ToObject<List<T>>();
+        }
+
+        public void SaveJSON<T>(T data) where T : new()
+        {
+            string fullPath = Path.Combine(FilePath, FileName);
+            if (!File.Exists(fullPath))
+                throw new FileNotFoundException(fullPath);
+
+            string jsonContent = JsonConvert.SerializeObject(data, Formatting.Indented);
+            File.WriteAllText(fullPath, jsonContent);
         }
     }
 
