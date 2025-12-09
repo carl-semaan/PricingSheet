@@ -20,9 +20,10 @@ namespace PricingSheet
         public static Dictionary<string, int> RowMap = new Dictionary<string, int>();
         public CancellationTokenSource BloombegCts = new CancellationTokenSource();
         public BlockData InstrumentDisplayBlock;
+
+        private SheetUniverse FluxSheetUniverse = new SheetUniverse();
         private SheetDisplay SheetDisplay;
         private readonly object _matrixLock = new object();
-        private SheetUniverse FluxSheetUniverse = new SheetUniverse();
         public static Flux FluxInstance { get; private set; }
         private void Sheet3_Startup(object sender, System.EventArgs e)
         {
@@ -305,26 +306,26 @@ namespace PricingSheet
 
             FluxSheetUniverse.Instruments.Add(newInstrument);
 
-            // Update Block Data 
             lock (_matrixLock)
             {
+                // Update Block Data 
                 List<string> instruments = InstrumentDisplayBlock.Rows.ToList();
                 instruments.Add(newInstrument.Ticker);
 
                 InstrumentDisplayBlock = new BlockData(4, 4, instruments, InstrumentDisplayBlock.Columns);
+
+                // Update Sheet Display
+                List<ColumnData> columnData = SheetDisplay.Columns.ToList();
+                columnData[0] = new ColumnData(columnData[0].StartRow, columnData[0].Column, columnData[0].Data.Append(new DataCell(newInstrument.Ticker, IsBold: true, IsCentered: true)).ToList());
+                columnData[1] = new ColumnData(columnData[1].StartRow, columnData[1].Column, columnData[1].Data.Append(new DataCell(newInstrument.Underlying, IsBold: true, IsCentered: true)).ToList());
+                columnData[2] = new ColumnData(columnData[2].StartRow, columnData[2].Column, columnData[2].Data.Append(new DataCell(newInstrument.ShortName, IsBold: true, IsCentered: true)).ToList());
+                columnData[3] = new ColumnData(columnData[3].StartRow, columnData[3].Column, columnData[3].Data.Append(new DataCell(newInstrument.ExchangeCode, IsBold: true, IsCentered: true)).ToList());
+                columnData[4] = new ColumnData(columnData[4].StartRow, columnData[4].Column, columnData[4].Data.Append(new DataCell(newInstrument.Currency, IsBold: true, IsCentered: true)).ToList());
+
+                SheetDisplay.Columns = columnData;
+                SheetDisplay.Block = InstrumentDisplayBlock;
+                SheetDisplay.RunDisplay();
             }
-
-            // Update Sheet Display
-            List<ColumnData> columnData = SheetDisplay.Columns.ToList();
-            columnData[0] = new ColumnData(columnData[0].StartRow, columnData[0].Column, columnData[0].Data.Append(new DataCell(newInstrument.Ticker, IsBold: true, IsCentered: true)).ToList());
-            columnData[1] = new ColumnData(columnData[1].StartRow, columnData[1].Column, columnData[1].Data.Append(new DataCell(newInstrument.Underlying, IsBold: true, IsCentered: true)).ToList());
-            columnData[2] = new ColumnData(columnData[2].StartRow, columnData[2].Column, columnData[2].Data.Append(new DataCell(newInstrument.ShortName, IsBold: true, IsCentered: true)).ToList());
-            columnData[3] = new ColumnData(columnData[3].StartRow, columnData[3].Column, columnData[3].Data.Append(new DataCell(newInstrument.ExchangeCode, IsBold: true, IsCentered: true)).ToList());
-            columnData[4] = new ColumnData(columnData[4].StartRow, columnData[4].Column, columnData[4].Data.Append(new DataCell(newInstrument.Currency, IsBold: true, IsCentered: true)).ToList());
-
-            SheetDisplay.Columns = columnData;
-            SheetDisplay.Block = InstrumentDisplayBlock;
-            SheetDisplay.RunDisplay();
 
             // Cancel Old Bloomberg Pipeline
             BloombegCts.Cancel();
