@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Bloomberglp.Blpapi;
 using ExcelVSTO = Microsoft.Office.Tools.Excel;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
+using System.Collections.Concurrent;
 
 namespace PricingSheet
 {
@@ -23,7 +24,7 @@ namespace PricingSheet
         public List<string> Fields { get; set; }
         public ExcelVSTO.Worksheet Sheet { get; set; }
         private Flux _Flux;
-
+        private ConcurrentQueue<Event> _eventQueue = new ConcurrentQueue<Event>();
         public BloombergPipeline(Flux Flux, ExcelVSTO.Worksheet Sheet, List<Flux.Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
         {
             _Flux = Flux;
@@ -40,7 +41,7 @@ namespace PricingSheet
             SessionOptions options = new SessionOptions
             {
                 ServerHost = "localhost",
-                ServerPort = 8194        
+                ServerPort = 8194
             };
 
             try
@@ -53,63 +54,82 @@ namespace PricingSheet
                     if (!session.OpenService("//blp/mktdata"))
                         throw new Exception("Failed to open service");
 
-                    // Create subscriptions
                     var subscriptions = GetSubscriptions();
-
-                    // Subscribe
                     session.Subscribe(subscriptions);
-                    System.Diagnostics.Debug.WriteLine("Subscribed to live data for multiple instruments/fields.");
+                    System.Diagnostics.Debug.WriteLine("Subscribed to live data.");
 
-                    // Event loop
-                    while (!_token.IsCancellationRequested)
+                    var consumerThreads = new List<Thread>();
+                    int consumerthreadsCount = Environment.ProcessorCount;
+                    for (int i = 0; i < consumerthreadsCount; i++)
                     {
-                        try
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Waiting for next event... ");
-                            Event ev = session.NextEvent(timeoutMs);
-                            if (ev.Type == Event.EventType.TIMEOUT)
-                            {
-                                System.Diagnostics.Debug.WriteLine("Timeout event received, continuing...");
-                                continue;
-                            }
-
-                            System.Diagnostics.Debug.WriteLine($"Received event: {ev.Type}");
-                            foreach (Message msg in ev)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"Event Type: {ev.Type},\nMessage: {msg}");
-                                if (msg.MessageType.Equals("MarketDataEvents") || msg.MessageType.Equals("MarketDataUpdate"))
-                                {
-                                    string instrument = msg.CorrelationID.ToString().Substring(6);
-                                    foreach (var field in Fields)
-                                    {
-                                        if (msg.HasElement(field))
-                                        {
-                                            var element = msg.GetElement(field);
-                                            if (element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.FLOAT64 || element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.INT32)
-                                            {
-                                                var value = msg.GetElementAsFloat64(field);
-                                                if (!double.IsNaN(value))
-                                                    _Flux.UpdateMatrixSafe(instrument, field, value);
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (msg.MessageType.Equals("SubscriptionFailure") || msg.MessageType.Equals("SubscriptionTerminated") || msg.MessageType.Equals("SessionTerminated"))
-                                {
-                                    System.Diagnostics.Debug.WriteLine($"Subscription failure for {msg.CorrelationID}: {msg}");
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Error: {ex.ToString()}");
-                        }
+                        var consumerThread = new Thread(() => ProcessEvents(token));
+                        consumerThread.Start();
+                        consumerThreads.Add(consumerThread);
                     }
+
+                    while (!token.IsCancellationRequested)
+                    {
+                        Event ev = session.NextEvent(timeoutMs);
+                        _eventQueue.Enqueue(ev);
+                    }
+
+                    foreach (var consumerThread in consumerThreads)
+                        consumerThread.Join();
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error: {ex.ToString()}");
+                System.Diagnostics.Debug.WriteLine($"Error: {ex}");
+            }
+        }
+
+        private void ProcessEvents(CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                if (_eventQueue.TryDequeue(out Event ev))
+                {
+                    foreach (Message msg in ev)
+                    {
+                        try
+                        {
+                            HandleMessage(msg);
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Processing error: {ex}");
+                        }
+                    }
+                }
+                else
+                {
+                    Thread.Sleep(1);
+                }
+            }
+        }
+
+        private void HandleMessage(Message msg)
+        {
+            if (msg.MessageType.Equals("MarketDataEvents") || msg.MessageType.Equals("MarketDataUpdate"))
+            {
+                string instrument = msg.CorrelationID.ToString().Substring(6);
+                foreach (var field in Fields)
+                {
+                    if (msg.HasElement(field))
+                    {
+                        var element = msg.GetElement(field);
+                        if (element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.FLOAT64 || element.Datatype == Bloomberglp.Blpapi.Schema.Datatype.INT32)
+                        {
+                            var value = msg.GetElementAsFloat64(field);
+                            if (!double.IsNaN(value))
+                                _Flux.UpdateMatrixSafe(instrument, field, value);
+                        }
+                    }
+                }
+            }
+            else if (msg.MessageType.Equals("SubscriptionFailure") || msg.MessageType.Equals("SubscriptionTerminated") || msg.MessageType.Equals("SessionTerminated"))
+            {
+                System.Diagnostics.Debug.WriteLine($"Subscription failure for {msg.CorrelationID}: {msg}");
             }
         }
 
@@ -150,7 +170,7 @@ namespace PricingSheet
                 }
                 Thread.Sleep(1000);
             }
-        } 
+        }
 
         private void updateSheet(string instrument, string field, double value)
         {

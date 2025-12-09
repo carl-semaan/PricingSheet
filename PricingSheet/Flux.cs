@@ -123,7 +123,7 @@ namespace PricingSheet
                 FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(),
                 FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
             );
-            Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
+            Task.Run(() => pipeline.Launch(BloombegCts.Token));
 
             // Launch Auto Display Update
             StartAutoUpdate(BloombegCts.Token);
