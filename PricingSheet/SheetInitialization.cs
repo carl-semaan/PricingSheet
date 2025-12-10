@@ -336,7 +336,7 @@ namespace PricingSheet
         public List<string> Rows { get; set; }
         public List<string> Columns { get; set; }
         public object[,] Data { get; set; }
-
+        public bool DirtyFlag { get; set; } = false;
         public BlockData(int StartRow, int StartColumn, List<string> Rows, List<string> Columns)
         {
             this.StartRow = StartRow;

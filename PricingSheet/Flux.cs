@@ -79,6 +79,9 @@ namespace PricingSheet
             FluxSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities));
             FluxSheetUniverse.Fields = reader.LoadClass<Fields>(nameof(Fields));
 
+            //.Where(x => x.MaturityCode != "Z5" && x.MaturityCode != "Z6" && x.MaturityCode != "Z7" && x.MaturityCode != "Z8").ToList();
+            //.Where(x => x.MaturityCode != "Z4" && x.MaturityCode != "Z9" && x.MaturityCode != "Z0" && x.MaturityCode != "Z1").ToList();
+
             // Merging Cells
             for (int i = 0; i < FluxSheetUniverse.Maturities.Count * 2; i += 2)
             {
@@ -277,9 +280,13 @@ namespace PricingSheet
             uiTimer.Interval = 500;
             uiTimer.Tick += (s, e) =>
             {
-                lock (_matrixLock)
+                if (InstrumentDisplayBlock.DirtyFlag)
                 {
-                    SheetDisplay.RunBlock();
+                    InstrumentDisplayBlock.DirtyFlag = false;
+                    lock (_matrixLock)
+                    {
+                        SheetDisplay.RunBlock();
+                    }
                 }
             };
             uiTimer.Start();
@@ -287,6 +294,8 @@ namespace PricingSheet
 
         public void UpdateMatrixSafe(string instrument, string field, object value)
         {
+            InstrumentDisplayBlock.DirtyFlag = true;
+
             string[] parts = instrument.Split('=');
 
             string maturity = parts[1].Split(' ')[0];
