@@ -148,7 +148,6 @@ namespace PricingSheet
 
         public async Task LoadAndDisplay(CSVReader reader)
         {
-            Stopwatch sw = Stopwatch.StartNew();
             List<CSVTicker> data = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
 
             foreach(var tickerData in data)
@@ -161,8 +160,6 @@ namespace PricingSheet
             }
 
             SheetDisplay.RunBlock();
-
-            sw.Stop();
         }
         #endregion
 
