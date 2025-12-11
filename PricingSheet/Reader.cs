@@ -144,4 +144,78 @@ namespace PricingSheet
             return result;
         }
     }
+
+    public class CSVReader : Reader
+    {
+        public CSVReader() { }
+
+        public CSVReader(string filePath, string fileName = "")
+        {
+            this.FilePath = filePath;
+            this.FileName = fileName;
+        }
+
+        public CSVTicker LoadTickerData(string Ticker)
+        {
+            int maturityColStart = 6;
+
+            if (string.IsNullOrEmpty(Ticker))
+                throw new ArgumentException("Ticker cannot be null or empty.");
+
+            string fullPath = Path.Combine(FilePath, $"{Ticker.ToUpper()}.csv");
+            if (!File.Exists(fullPath))
+                throw new FileNotFoundException(fullPath);
+
+            var lines = File.ReadAllLines(fullPath);
+            if (lines.Length < 2)
+                throw new Exception("CSV file is empty or does not contain enough data.");
+
+            CSVTicker tickerData = new CSVTicker();
+
+            var headers = lines[0].Split(',').Skip(maturityColStart).ToList();
+            var lastRow = lines.Last().Split(',').ToList();
+
+            tickerData.Ticker = Ticker;
+            tickerData.Date = lastRow[3];
+
+            Dictionary<string, double> MaturityValues = new Dictionary<string, double>();
+            for (int i = 0; i < headers.Count(); i++)
+            {
+                double value;
+                try
+                {
+                    value = double.Parse(lastRow.ElementAt(i + maturityColStart));
+                }
+                catch
+                {
+                    value = double.NaN;
+                }
+
+                MaturityValues[headers[i]] = value;
+            }
+
+            tickerData.Maturities = MaturityValues;
+
+            return tickerData;
+        }
+    }
+
+    public class CSVTicker
+    {
+        public string Ticker { get; set; }
+        public string Date { get; set; }
+        public Dictionary<string, double> Maturities { get; set; }
+
+        public CSVTicker()
+        {
+            Maturities = new Dictionary<string, double>();
+        }
+
+        public CSVTicker(string ticker, string ul, string currency, string date)
+        {
+            Ticker = ticker;
+            Date = date;
+            Maturities = new Dictionary<string, double>();
+        }
+    }
 }

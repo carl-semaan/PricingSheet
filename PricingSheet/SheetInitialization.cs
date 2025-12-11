@@ -22,7 +22,7 @@ namespace PricingSheet
 
         public SheetInitialization() { }
 
-        public SheetInitialization(ExcelVSTO.Worksheet Sheet, string Name, bool ClearOnStartUp, List<SheetButton> SheetButtons, int FreezeRow = 0, int FreezeColumn = 0)
+        public SheetInitialization(ExcelVSTO.Worksheet Sheet, string Name, bool ClearOnStartUp, int FreezeRow = 0, int FreezeColumn = 0)
         {
             this.Sheet = Sheet;
             this.Name = Name;
@@ -94,7 +94,7 @@ namespace PricingSheet
             if (batch)
                 RunBatch();
             else
-                Run();
+                RunCell();
 
             if (Block != null)
                 RunBlock();
@@ -136,6 +136,7 @@ namespace PricingSheet
                     ExcelInterop.Range bottomRight = Sheet.Cells[Block.StartRow + rows - 1, Block.StartColumn + cols - 1];
                     ExcelInterop.Range writeRange = Sheet.Range[topLeft, bottomRight];
 
+                    writeRange.HorizontalAlignment = ExcelInterop.XlHAlign.xlHAlignCenter;
                     writeRange.Value2 = Block.Data;
                 }
                 finally
@@ -165,7 +166,7 @@ namespace PricingSheet
             }
         }
 
-        public void Run()
+        public void RunCell()
         {
             foreach (ColumnData col in Columns)
             {

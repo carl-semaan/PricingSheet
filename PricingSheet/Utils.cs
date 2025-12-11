@@ -29,8 +29,9 @@ namespace PricingSheet
 
     public class Constants
     {
-        public const string FolderPath = @"G:\Shared drives\Arbitrage\Tools\9.Pricing Sheets";
+        public const string PricingSheetFolderPath = @"G:\Shared drives\Arbitrage\Tools\9.Pricing Sheets";
         public const string JSONFileName = "PricingSheetData.json";
+        public const string TickersDBFolderPath = @"G:\Shared drives\Arbitrage\Tools\9.Pricing Sheets\SSDF Database-Testing";
     }
 
 }

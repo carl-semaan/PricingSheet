@@ -16,22 +16,21 @@ namespace PricingSheet
 {
     public partial class Flux
     {
+        public static Flux FluxInstance { get; private set; }
+
         public static Dictionary<(string maturity, string field), int> ColMap = new Dictionary<(string maturity, string field), int>();
         public static Dictionary<string, int> RowMap = new Dictionary<string, int>();
         public CancellationTokenSource BloombegCts = new CancellationTokenSource();
-        public BlockData InstrumentDisplayBlock;
 
         private SheetUniverse FluxSheetUniverse = new SheetUniverse();
         private SheetDisplay SheetDisplay;
+        private BlockData InstrumentDisplayBlock;
         private readonly object _matrixLock = new object();
-        public static Flux FluxInstance { get; private set; }
+
         private void Sheet3_Startup(object sender, System.EventArgs e)
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
             FluxInstance = this;
             RunInitialization();
-            sw.Stop();
         }
 
         private void Sheet3_Shutdown(object sender, System.EventArgs e)
@@ -58,12 +57,11 @@ namespace PricingSheet
             var interopSheet = Globals.ThisWorkbook.Worksheets["Sheet3"];
             var vstoSheet = Globals.Factory.GetVstoObject(interopSheet);
 
-            // Initializing Sheet with buttons
+            // Initializing Sheet 
             SheetInitialization sheetInitialization = new SheetInitialization(
                 vstoSheet,
                 "Flux",
                 true,
-                new List<SheetButton>(),
                 FreezeRow: 3
             );
 
@@ -73,10 +71,10 @@ namespace PricingSheet
             List<ColumnData> columnData = new List<ColumnData>();
             List<RowData> rowData = new List<RowData>();
 
-            JSONReader reader = new JSONReader(Constants.FolderPath, Constants.JSONFileName);
+            JSONReader reader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
 
             FluxSheetUniverse.Instruments = reader.LoadClass<Instruments>(nameof(Instruments));
-            FluxSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities));
+            FluxSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities)).Where(M => M.Flux).ToList();
             FluxSheetUniverse.Fields = reader.LoadClass<Fields>(nameof(Fields));
 
             //.Where(x => x.MaturityCode != "Z5" && x.MaturityCode != "Z6" && x.MaturityCode != "Z7" && x.MaturityCode != "Z8").ToList();
@@ -94,11 +92,12 @@ namespace PricingSheet
             rowData.Add(new RowData(1, 4, maturityCodes));
             rowData.Add(new RowData(2, 4, maturitiesString));
 
-            new SheetDisplay(vstoSheet, columnData, rowData).Run();
+            // Running the upper headers by cell to apply the formatting
+            new SheetDisplay(vstoSheet, Rows: rowData).RunCell();
             rowData.Clear();
 
             // Setting the Headers
-            List<DataCell> Headers = GetHeaders(FluxSheetUniverse.Maturities, FluxSheetUniverse.Fields);
+            List<DataCell> Headers = GetHeaders();
             List<RowData> Rows = new List<RowData>();
             rowData.Add(new RowData(3, 1, Headers));
 
@@ -127,7 +126,7 @@ namespace PricingSheet
                 FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(),
                 FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
             );
-            Task.Run(() => pipeline.Launch(BloombegCts.Token));
+            Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
 
             // Launch Auto Display Update
             StartAutoUpdate(BloombegCts.Token);
@@ -149,13 +148,13 @@ namespace PricingSheet
             return (Maturities, Codes);
         }
 
-        private static List<DataCell> GetHeaders(List<Maturities> maturities, List<Fields> fields)
+        private List<DataCell> GetHeaders()
         {
             List<string> headers = new List<string>() { "Ticker", "Underlying", "Short Name" };
 
-            foreach (var mat in maturities)
+            foreach (var mat in FluxSheetUniverse.Maturities)
             {
-                foreach (var field in fields)
+                foreach (var field in FluxSheetUniverse.Fields)
                 {
                     headers.Add($"{field.Field}");
                 }
@@ -246,13 +245,17 @@ namespace PricingSheet
         {
             public int Maturity { get; set; }
             public string MaturityCode { get; set; }
+            public bool Flux { get; set; }
+            public bool Active { get; set; }
 
             public Maturities() { }
 
-            public Maturities(int Maturity, string MaturityCode)
+            public Maturities(int Maturity, string MaturityCode, bool flux, bool active)
             {
                 this.Maturity = Maturity;
                 this.MaturityCode = MaturityCode;
+                Flux = flux;
+                Active = active;
             }
         }
 
@@ -314,6 +317,7 @@ namespace PricingSheet
             var vstoSheet = Globals.Factory.GetVstoObject(interopSheet);
 
             FluxSheetUniverse.Instruments.Add(newInstrument);
+            InitializeDictionaries(interopSheet, FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(), FluxSheetUniverse.Fields.Select(x => x.Field).ToList(), FluxSheetUniverse.Instruments.Select(x => x.Ticker).ToList());
 
             lock (_matrixLock)
             {

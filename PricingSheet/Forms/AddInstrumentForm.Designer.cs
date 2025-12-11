@@ -198,7 +198,7 @@ namespace PricingSheet.Forms
             var flux = Flux.FluxInstance;
             flux.UpdateDisplay(newInstrument);
 
-            JSONReader reader = new JSONReader(Constants.FolderPath, Constants.JSONFileName);
+            JSONReader reader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
             Flux.SheetUniverse sheetUniverse = new Flux.SheetUniverse();
             sheetUniverse.Instruments = reader.LoadClass<Flux.Instruments>(nameof(Flux.Instruments));
             sheetUniverse.Maturities = reader.LoadClass<Flux.Maturities>(nameof(Flux.Maturities));
