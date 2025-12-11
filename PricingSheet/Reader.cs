@@ -2,8 +2,11 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -154,49 +157,89 @@ namespace PricingSheet
             this.FilePath = filePath;
             this.FileName = fileName;
         }
-
-        public CSVTicker LoadTickerData(string Ticker)
+        /// <summary>
+        /// High performance loading of multiple tickers from CSV files in parallel with least resource usage
+        /// </summary>
+        /// <param name="tickers"></param>
+        /// <returns></returns>
+        public async Task<List<CSVTicker>> LoadAllTickersAsync(IEnumerable<string> tickers)
         {
-            int maturityColStart = 6;
+            var results = new ConcurrentBag<CSVTicker>();
+            var missing = new ConcurrentBag<string>();
 
-            if (string.IsNullOrEmpty(Ticker))
-                throw new ArgumentException("Ticker cannot be null or empty.");
+            int maxThreads = Math.Min(4, Environment.ProcessorCount);
+            await Task.Run(() =>
+            {
+                Parallel.ForEach(tickers,
+                    new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
+                    ticker =>
+                    {
+                        try
+                        {
+                            var data = LoadTickerData(ticker);
+                            if (data != null)
+                                results.Add(data);
+                            else
+                                missing.Add(ticker);
+                        }
+                        catch
+                        {
+                            missing.Add(ticker);
+                        }
+                    });
+            });
 
-            string fullPath = Path.Combine(FilePath, $"{Ticker.ToUpper()}.csv");
+            if (missing.Count > 0)
+                Debug.WriteLine($"Missing tickers: {string.Join(", ", missing)}");
+
+            return new List<CSVTicker>(results);
+        }
+
+        public CSVTicker LoadTickerData(string ticker)
+        {
+            string fullPath = Path.Combine(FilePath, $"{ticker.ToUpper()}.csv");
+
             if (!File.Exists(fullPath))
                 throw new FileNotFoundException(fullPath);
 
-            var lines = File.ReadAllLines(fullPath);
-            if (lines.Length < 2)
-                throw new Exception("CSV file is empty or does not contain enough data.");
-
-            CSVTicker tickerData = new CSVTicker();
-
-            var headers = lines[0].Split(',').Skip(maturityColStart).ToList();
-            var lastRow = lines.Last().Split(',').ToList();
-
-            tickerData.Ticker = Ticker;
-            tickerData.Date = lastRow[3];
-
-            Dictionary<string, double> MaturityValues = new Dictionary<string, double>();
-            for (int i = 0; i < headers.Count(); i++)
+            using (var sr = new StreamReader(fullPath))
             {
-                double value;
-                try
+                string headerLine = sr.ReadLine();
+                if (string.IsNullOrWhiteSpace(headerLine))
+                    throw new Exception("CSV header missing");
+
+                string[] headerParts = headerLine.Split(',');
+                int maturityColStart = 6;
+                int maturityCount = headerParts.Length - maturityColStart;
+
+                string[] maturityLabels = new string[maturityCount];
+                Array.Copy(headerParts, maturityColStart, maturityLabels, 0, maturityCount);
+
+                string lastLine = null;
+                while (!sr.EndOfStream)
+                    lastLine = sr.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(lastLine))
+                    throw new Exception("CSV data missing");
+
+                string[] fields = lastLine.Split(',');
+                CSVTicker tickerData = new CSVTicker
                 {
-                    value = double.Parse(lastRow.ElementAt(i + maturityColStart));
-                }
-                catch
+                    Ticker = ticker,
+                    Date = fields[3]
+                };
+
+                for (int i = 0; i < maturityLabels.Length; i++)
                 {
-                    value = double.NaN;
+                    string valStr = fields.Length > i + maturityColStart ? fields[i + maturityColStart] : "-";
+                    if (double.TryParse(valStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
+                        tickerData.Maturities[maturityLabels[i]] = value;
+                    else
+                        tickerData.Maturities[maturityLabels[i]] = double.NaN;
                 }
 
-                MaturityValues[headers[i]] = value;
+                return tickerData;
             }
-
-            tickerData.Maturities = MaturityValues;
-
-            return tickerData;
         }
     }
 

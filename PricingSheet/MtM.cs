@@ -23,7 +23,6 @@ namespace PricingSheet
         private SheetUniverse MtMSheetUniverse = new SheetUniverse();
         private SheetDisplay SheetDisplay;
         private BlockData InstrumentDisplayBlock;
-        private ConcurrentQueue<string> _tickerQueue = new ConcurrentQueue<string>();
 
         private void Sheet2_Startup(object sender, System.EventArgs e)
         {
@@ -96,7 +95,7 @@ namespace PricingSheet
 
             // Fetch Tickers Data
             CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
-            Task.Run(() => LoadMaturityValues(csvReader));
+            Task.Run(() => LoadAndDisplay(csvReader));
 
             // Display Sheet Values
             SheetDisplay = new SheetDisplay(vstoSheet, Columns: columnData, Block: InstrumentDisplayBlock);
@@ -145,6 +144,25 @@ namespace PricingSheet
 
             sw.Stop();
             Debug.WriteLine($"Loaded {bag.Count} tickers in {sw.ElapsedMilliseconds} ms. Missing tickers: {missingTickers.Count}");
+        }
+
+        public async Task LoadAndDisplay(CSVReader reader)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            List<CSVTicker> data = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
+
+            foreach(var tickerData in data)
+            {
+                InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, "Last Update", tickerData.Date);
+                foreach(var mat in tickerData.Maturities)
+                {
+                    InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, string.Concat(mat.Key[0], mat.Key[2]), mat.Value);
+                }
+            }
+
+            SheetDisplay.RunBlock();
+
+            sw.Stop();
         }
         #endregion
 
