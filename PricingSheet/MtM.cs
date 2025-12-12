@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.Tools.Applications.Runtime;
+﻿using Microsoft.Office.Interop.Excel;
+using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using static PricingSheet.Flux;
 using Excel = Microsoft.Office.Interop.Excel;
+using ExcelInterop = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
 
 namespace PricingSheet
@@ -61,7 +63,7 @@ namespace PricingSheet
                 "MtM",
                 true,
                 FreezeRow: 1,
-                FreezeColumn: 4
+                FreezeColumn: 5
                );
 
             sheetInitialization.Run();
@@ -83,6 +85,17 @@ namespace PricingSheet
             SheetDisplay = new SheetDisplay(vstoSheet, Rows: rowData);
             SheetDisplay.RunCell();
             rowData.Clear();
+
+            // Minimizing the Older Maturities
+            for (int i = 0; i < MtMSheetUniverse.Maturities.Count; i++)
+            {
+                bool isOutdated = DateTime.ParseExact(MtMSheetUniverse.Maturities[i].Maturity, "yyyyMM", CultureInfo.InvariantCulture).Year < DateTime.Now.Year;
+                if (isOutdated)
+                {
+                    Excel.Range colRange = interopSheet.Columns[6 + i];
+                    colRange.ColumnWidth = 0;
+                }
+            }
 
             // Setting the Data 
             columnData.Add(new ColumnData(2, 1, MtMSheetUniverse.Instruments.Select(x => new DataCell(x.Ticker, IsBold: true, IsCentered: true)).ToList()));
@@ -149,20 +162,17 @@ namespace PricingSheet
         public async Task LoadAndDisplay(CSVReader reader)
         {
             List<CSVTicker> data = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
-
-            foreach(var tickerData in data)
+            foreach (var tickerData in data)
             {
                 InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, "Last Update", tickerData.Date);
-                foreach(var mat in tickerData.Maturities)
+                foreach (var mat in tickerData.Maturities)
                 {
                     InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, string.Concat(mat.Key[0], mat.Key[2]), mat.Value);
                 }
             }
-
             SheetDisplay.RunBlock();
         }
         #endregion
-
 
         #region Sheet Data
         public class SheetUniverse

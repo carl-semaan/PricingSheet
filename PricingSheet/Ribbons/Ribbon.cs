@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 
 namespace PricingSheet.Ribbons
 {
-    public partial class FluxRibbon
+    public partial class Ribbon
     {
         private void Ribbon1_Load(object sender, RibbonUIEventArgs e)
         {
@@ -22,12 +23,18 @@ namespace PricingSheet.Ribbons
         private void UpdateRibbonVisibility()
         {
             var activeSheet = Globals.ThisWorkbook.Application.ActiveSheet as ExcelInterop.Worksheet;
-            this.tab1.Visible = activeSheet?.Name == "Flux";
+            this.tab1.Visible = true;
         }
 
         private void toggleButton1_Click(object sender, RibbonControlEventArgs e)
         {
 
+        }
+
+        private void button5_Click(object sender, RibbonControlEventArgs e)
+        { 
+            CSVReader reader = new CSVReader(Constants.PricingSheetFolderPath);
+            Task.Run(() => MtM.MtMInstance.LoadAndDisplay(reader));
         }
     }
 }

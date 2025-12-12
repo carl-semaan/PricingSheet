@@ -227,11 +227,11 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reader.cs" />
-    <Compile Include="Ribbons\FluxRibbon.cs">
+    <Compile Include="Ribbons\Ribbon.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Ribbons\FluxRibbon.Designer.cs">
-      <DependentUpon>FluxRibbon.cs</DependentUpon>
+    <Compile Include="Ribbons\Ribbon.Designer.cs">
+      <DependentUpon>Ribbon.cs</DependentUpon>
     </Compile>
     <Compile Include="SheetInitialization.cs" />
     <Compile Include="Univ.cs">
@@ -270,9 +270,10 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="Ribbons\FluxRibbon.resx">
-      <DependentUpon>FluxRibbon.cs</DependentUpon>
+    <EmbeddedResource Include="Ribbons\Ribbon.resx">
+      <DependentUpon>Ribbon.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="packages.config" />
@@ -308,7 +309,9 @@
       <DependentUpon>Flux.cs</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Ribbons\Icons\refresh-page-option.png" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

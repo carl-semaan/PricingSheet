@@ -73,7 +73,7 @@ namespace PricingSheet
         public ExcelReader() { }
         public ExcelReader(string filePath, string fileName, bool ReadHeaders = true) : base(filePath, fileName)
         {
-            this.ReadHeaders = true;
+            this.ReadHeaders = ReadHeaders;
             this.Headers = new List<string>();
         }
 
@@ -254,7 +254,7 @@ namespace PricingSheet
             Maturities = new Dictionary<string, double>();
         }
 
-        public CSVTicker(string ticker, string ul, string currency, string date)
+        public CSVTicker(string ticker, string date)
         {
             Ticker = ticker;
             Date = date;

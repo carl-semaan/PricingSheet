@@ -209,8 +209,10 @@ namespace PricingSheet
                 range.Interior.Color = System.Drawing.ColorTranslator.FromHtml(dataCells.FirstOrDefault().BgColor);
             if (dataCells.FirstOrDefault().IsCentered)
                 range.HorizontalAlignment = ExcelInterop.XlHAlign.xlHAlignCenter;
-            if (dataCells.FirstOrDefault().FontSize != 14)
+            if (dataCells.FirstOrDefault().FontSize != 0)
                 range.Font.Size = dataCells.FirstOrDefault().FontSize;
+            if (dataCells.FirstOrDefault().Width != 0)
+                range.ColumnWidth = range.Width;
             range.Font.Bold = dataCells.FirstOrDefault().IsBold;
         }
 
@@ -234,8 +236,10 @@ namespace PricingSheet
                 range.Interior.Color = System.Drawing.ColorTranslator.FromHtml(dataCells.FirstOrDefault().BgColor);
             if (dataCells.FirstOrDefault().IsCentered)
                 range.HorizontalAlignment = ExcelInterop.XlHAlign.xlHAlignCenter;
-            if (dataCells.FirstOrDefault().FontSize != 14)
+            if (dataCells.FirstOrDefault().FontSize != 0)
                 range.Font.Size = dataCells.FirstOrDefault().FontSize;
+            if (dataCells.FirstOrDefault().Width != 0)
+                range.ColumnWidth = range.Width;
             range.Font.Bold = dataCells.FirstOrDefault().IsBold;
         }
 
@@ -249,8 +253,10 @@ namespace PricingSheet
                 cell.Interior.Color = System.Drawing.ColorTranslator.FromHtml(dataCell.BgColor);
             if (dataCell.IsCentered)
                 cell.HorizontalAlignment = ExcelInterop.XlHAlign.xlHAlignCenter;
-            if (dataCell.FontSize != 14)
+            if (dataCell.FontSize != 0)
                 cell.Font.Size = dataCell.FontSize;
+            if (dataCell.Width != 0)
+                cell.ColumnWidth = dataCell.Width;
             cell.Font.Bold = dataCell.IsBold;
         }
     }
@@ -392,8 +398,9 @@ namespace PricingSheet
         public string Color { get; set; }
         public int Offset { get; set; }
         public int FontSize { get; set; }
+        public double Width { get; set; }
 
-        public DataCell(string Value, string Color = "", string BgColor = "", bool IsBold = false, bool IsCentered = false, int Offset = 0, int FontSize = 14)
+        public DataCell(string Value, string Color = "", string BgColor = "", bool IsBold = false, bool IsCentered = false, int Offset = 0, int FontSize = 0, double Width = 0)
         {
             this.Value = Value;
             this.Color = Color;
@@ -402,6 +409,7 @@ namespace PricingSheet
             this.IsCentered = IsCentered;
             this.Offset = Offset;
             this.FontSize = FontSize;
+            this.Width = Width;
         }
     }
     #endregion
