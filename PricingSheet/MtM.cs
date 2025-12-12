@@ -21,10 +21,12 @@ namespace PricingSheet
     public partial class MtM
     {
         public static MtM MtMInstance { get; private set; }
+        public Task FilesLoaded => _filesLoadedTcs.Task;
 
         private SheetUniverse MtMSheetUniverse = new SheetUniverse();
         private SheetDisplay SheetDisplay;
         private BlockData InstrumentDisplayBlock;
+        private TaskCompletionSource<bool> _filesLoadedTcs = new TaskCompletionSource<bool>();
 
         private void Sheet2_Startup(object sender, System.EventArgs e)
         {
@@ -161,7 +163,9 @@ namespace PricingSheet
 
         public async Task LoadAndDisplay(CSVReader reader)
         {
+            Stopwatch sw = Stopwatch.StartNew();
             List<CSVTicker> data = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
+            sw.Stop();
             foreach (var tickerData in data)
             {
                 InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, "Last Update", tickerData.Date);
@@ -171,6 +175,12 @@ namespace PricingSheet
                 }
             }
             SheetDisplay.RunBlock();
+            SignalFilesLoaded();
+        }
+
+        public void SignalFilesLoaded()
+        {
+            _filesLoadedTcs.TrySetResult(true);
         }
         #endregion
 

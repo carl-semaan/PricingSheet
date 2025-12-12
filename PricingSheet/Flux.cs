@@ -74,7 +74,7 @@ namespace PricingSheet
             JSONReader reader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
 
             FluxSheetUniverse.Instruments = reader.LoadClass<Instruments>(nameof(Instruments));
-            FluxSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities)).Where(M => M.Flux).ToList();
+            FluxSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities)).Where(M => M.Flux).ToList(); 
             FluxSheetUniverse.Fields = reader.LoadClass<Fields>(nameof(Fields));
 
             //.Where(x => x.MaturityCode != "Z5" && x.MaturityCode != "Z6" && x.MaturityCode != "Z7" && x.MaturityCode != "Z8").ToList();
@@ -126,7 +126,7 @@ namespace PricingSheet
                 FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(),
                 FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
             );
-            Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
+            Task.Run(() => pipeline.Launch(BloombegCts.Token));
 
             // Launch Auto Display Update
             StartAutoUpdate(BloombegCts.Token);

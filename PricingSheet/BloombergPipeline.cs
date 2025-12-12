@@ -36,6 +36,8 @@ namespace PricingSheet
 
         public void Launch(CancellationToken token)
         {
+            MtM.MtMInstance.FilesLoaded.Wait();
+
             _token = token;
 
             SessionOptions options = new SessionOptions
