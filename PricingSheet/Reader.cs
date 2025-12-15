@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Management.Instrumentation;
 using System.Reflection;
 using System.Runtime.Remoting.Contexts;
 using System.Text;
@@ -259,6 +260,32 @@ namespace PricingSheet
             Ticker = ticker;
             Date = date;
             Maturities = new Dictionary<string, double>();
+        }
+    }
+
+    public class JSONContent
+    {
+        public List<Flux.Instruments> Instruments { get; set; }
+        public List<Flux.Maturities> Maturities { get; set; }
+        public List<Flux.Fields> Fields { get; set; }
+        public List<MtM.LastPriceLoad> LastPriceLoad { get; set; }
+        public List<MtM.UnderlyingSpot> UnderlyingSpot { get; set; }
+        public JSONContent()
+        {
+            Instruments = new List<Flux.Instruments>();
+            Maturities = new List<Flux.Maturities>();
+            Fields = new List<Flux.Fields>();
+            LastPriceLoad = new List<MtM.LastPriceLoad>();
+            UnderlyingSpot = new List<MtM.UnderlyingSpot>();
+        }
+
+        public JSONContent(List<Flux.Instruments> instruments, List<Flux.Maturities> maturities, List<Flux.Fields> fields, List<MtM.LastPriceLoad> lastPriceLoad, List<MtM.UnderlyingSpot> underlyingSpot)
+        {
+            Instruments = instruments;
+            Maturities = maturities;
+            Fields = fields;
+            LastPriceLoad = lastPriceLoad;
+            UnderlyingSpot = underlyingSpot;
         }
     }
 }

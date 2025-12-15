@@ -1,4 +1,5 @@
 ﻿using BBGWrapper.Responses.MessagePieces;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Office.Interop.Excel;
 using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using System;
@@ -12,8 +13,10 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows.Forms;
 using static PricingSheet.Flux;
+using static PricingSheet.MtM;
 using Excel = Microsoft.Office.Interop.Excel;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
@@ -117,7 +120,7 @@ namespace PricingSheet
             Task.Run(() => LoadAndDisplay(csvReader));
 
             // Fetch Spot values for underlying
-            Task.Run(() => LoadSpotAndDisplay());
+            Task.Run(() => LoadSpotAndDisplay(reader));
 
             // Display Sheet Values
             SheetDisplay = new SheetDisplay(vstoSheet, Columns: columnData, Block: InstrumentDisplayBlock);
@@ -194,15 +197,21 @@ namespace PricingSheet
             _filesLoadedTcs.TrySetResult(true);
         }
 
-        private async Task LoadSpotAndDisplay()
+        private async Task LoadSpotAndDisplay(JSONReader reader)
         {
-            BloombergDataRequest dataRequest = new BloombergDataRequest(MtMInstance, MtMSheetUniverse.Instruments.Select(x => x.Underlying).Distinct().ToList(), "PX_CLOSE_1D");
+            List<LastPriceLoad> lastLoad = reader.LoadClass<LastPriceLoad>(nameof(LastPriceLoad));
 
-            Stopwatch sw = Stopwatch.StartNew();
-            var rawResponse = await dataRequest.FetchData();
-            sw.Stop();
+            List<UnderlyingSpot> rawResponse;
+            if (lastLoad.Select(x => x.LastLoad).FirstOrDefault() < DateTime.Today)
+            {
+                rawResponse = await LoadBloombergPrices(reader);
+            }
+            else
+            {
+                rawResponse = LoadSavedPrices(reader);
+            }
 
-            var response = rawResponse.ToDictionary(x => x.Instrument, x => x);
+            var response = rawResponse.ToDictionary(x => x.Underlying, x => x);
 
             lock (_matrixLock)
             {
@@ -210,17 +219,10 @@ namespace PricingSheet
                 {
                     try
                     {
-                        if (response.TryGetValue(instr.Underlying, out var apiRes))
-                        {
-                            if (!string.IsNullOrEmpty(apiRes.Error))
-                                Debug.WriteLine(apiRes.Error);
-
-                            InstrumentDisplayBlock.UpdateMatrix(instr.Ticker, "Spot", apiRes.Value);
-                        }
+                        if (response.TryGetValue(instr.Underlying, out var res))
+                            InstrumentDisplayBlock.UpdateMatrix(instr.Ticker, "Spot", res.Value);
                         else
-                        {
-                            Debug.WriteLine($"No Bloomberg response for {instr.Underlying}");
-                        }
+                            Debug.WriteLine($"No value for {instr.Underlying}");
                     }
                     catch (Exception ex)
                     {
@@ -230,6 +232,30 @@ namespace PricingSheet
                 SheetDisplay.RunBlock();
             }
         }
+
+        private async Task<List<UnderlyingSpot>> LoadBloombergPrices(JSONReader reader)
+        {
+            BloombergDataRequest dataRequest = new BloombergDataRequest(MtMInstance, MtMSheetUniverse.Instruments.Select(x => x.Underlying).Distinct().ToList(), "PX_CLOSE_1D");
+
+            Stopwatch sw = Stopwatch.StartNew();
+            var rawResponse = await dataRequest.FetchData();
+            sw.Stop();
+
+            List<UnderlyingSpot> response = rawResponse.Select(x => new UnderlyingSpot(x.Underlying, x.Value)).ToList();
+
+            JSONContent content = new JSONContent();
+            content.Instruments = reader.LoadClass<Flux.Instruments>(nameof(Flux.Instruments));
+            content.Maturities = reader.LoadClass<Flux.Maturities>(nameof(Flux.Maturities));
+            content.Fields = reader.LoadClass<Flux.Fields>(nameof(Flux.Fields));
+            content.LastPriceLoad = new List<LastPriceLoad> { new LastPriceLoad(DateTime.Today) };
+            content.UnderlyingSpot = response;
+
+            reader.SaveJSON<JSONContent>(content);
+
+            return response;
+        }
+
+        private List<UnderlyingSpot> LoadSavedPrices(JSONReader reader) => reader.LoadClass<UnderlyingSpot>(nameof(UnderlyingSpot));
         #endregion
 
         #region Sheet Data
@@ -274,6 +300,28 @@ namespace PricingSheet
             {
                 this.MaturityCode = MaturityCode;
                 this.Maturity = Maturity;
+            }
+        }
+
+        public class UnderlyingSpot
+        {
+            public string Underlying { get; set; }
+            public double? Value { get; set; }
+            public UnderlyingSpot() { }
+            public UnderlyingSpot(string Underlying, double? Value)
+            {
+                this.Underlying = Underlying;
+                this.Value = Value;
+            }
+        }
+
+        public class LastPriceLoad
+        {
+            public DateTime LastLoad { get; set; }
+            public LastPriceLoad() { }
+            public LastPriceLoad(DateTime LastLoad)
+            {
+                this.LastLoad = LastLoad;
             }
         }
         #endregion

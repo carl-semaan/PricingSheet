@@ -227,7 +227,7 @@ namespace PricingSheet
             public string ExchangeCode { get; set; }
             public string InstrumentType { get; set; }
             public string Currency { get; set; }
-
+            public string ICBSuperSectorName { get; set; }
 
             public Instruments() { }
             public Instruments(string ticker, string underlying, string shortName, string exchangeCode, string instrumentType, string currency)

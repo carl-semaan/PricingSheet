@@ -277,7 +277,7 @@ namespace PricingSheet
 
                     APIresponse response = new APIresponse
                     {
-                        Instrument = instrument
+                        Underlying = instrument
                     };
 
                     if (secData.HasElement("securityError"))
@@ -307,19 +307,14 @@ namespace PricingSheet
         }
     }
 
-    public class APIresponse
+    public class APIresponse : MtM.UnderlyingSpot
     {
-        public string Instrument { get; set; }
-        public double? Value { get; set; }
         public string Error { get; set; }
 
         public APIresponse() { }
-        public APIresponse(string instrument, double? value, string error)
+        public APIresponse(string underlying, double? value, string error) : base(underlying, value)
         {
-            Instrument = instrument;
-            Value = value;
             Error = error;
         }
-
     }
 }
