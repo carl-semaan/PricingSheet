@@ -254,6 +254,8 @@ namespace PricingSheet
                         if (ev.Type == Event.EventType.RESPONSE)
                             break;
                     }
+
+                    session.Stop();
                 }
             }
             catch (Exception ex)
