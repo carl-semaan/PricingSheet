@@ -387,6 +387,13 @@ namespace PricingSheet
 
             return Data[r, c].ToString() != "-";
         }
+
+        public object GetValue(string rowName, string ColumnName)
+        {
+            int r = Rows.IndexOf(rowName);
+            int c = Columns.IndexOf(ColumnName);
+            return Data[r, c];
+        }
     }
 
     public class DataCell

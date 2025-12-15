@@ -81,10 +81,10 @@ namespace PricingSheet
             List<RowData> rowData = new List<RowData>();
             List<ColumnData> columnData = new List<ColumnData>();
 
-            JSONReader reader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
+            JSONReader jsonReader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
 
-            MtMSheetUniverse.Instruments = reader.LoadClass<Instruments>(nameof(Instruments));
-            MtMSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities));
+            MtMSheetUniverse.Instruments = jsonReader.LoadClass<Instruments>(nameof(Instruments));
+            MtMSheetUniverse.Maturities = jsonReader.LoadClass<Maturities>(nameof(Maturities));
 
             // Setting the Headers
             List<DataCell> headers = GetHeaders();
@@ -119,8 +119,8 @@ namespace PricingSheet
             CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
             Task.Run(() => LoadAndDisplay(csvReader));
 
-            // Fetch Spot values for underlying
-            Task.Run(() => LoadSpotAndDisplay(reader));
+            // Fetch Spot values for underlying and calculate yield
+            Task.Run(() => LoadAndDisplay(jsonReader));
 
             // Display Sheet Values
             SheetDisplay = new SheetDisplay(vstoSheet, Columns: columnData, Block: InstrumentDisplayBlock);
@@ -197,7 +197,7 @@ namespace PricingSheet
             _filesLoadedTcs.TrySetResult(true);
         }
 
-        private async Task LoadSpotAndDisplay(JSONReader reader)
+        private async Task LoadAndDisplay(JSONReader reader)
         {
             List<LastPriceLoad> lastLoad = reader.LoadClass<LastPriceLoad>(nameof(LastPriceLoad));
 
@@ -213,6 +213,11 @@ namespace PricingSheet
 
             var response = rawResponse.ToDictionary(x => x.Underlying, x => x);
 
+            string yieldMaturity = $"Z{DateTime.Now.AddYears(2).Year % 10}";
+            double pivotMaturity;
+
+            await FilesLoaded;
+
             lock (_matrixLock)
             {
                 foreach (Instruments instr in MtMSheetUniverse.Instruments)
@@ -220,9 +225,15 @@ namespace PricingSheet
                     try
                     {
                         if (response.TryGetValue(instr.Underlying, out var res))
+                        {
+                            pivotMaturity = Convert.ToDouble(InstrumentDisplayBlock.GetValue(instr.Ticker, yieldMaturity));
                             InstrumentDisplayBlock.UpdateMatrix(instr.Ticker, "Spot", res.Value);
+                            InstrumentDisplayBlock.UpdateMatrix(instr.Ticker, "Yield", $"{(pivotMaturity / res.Value) * 100}%");
+                        }
                         else
+                        {
                             Debug.WriteLine($"No value for {instr.Underlying}");
+                        }
                     }
                     catch (Exception ex)
                     {
