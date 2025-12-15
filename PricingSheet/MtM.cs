@@ -1,4 +1,5 @@
-﻿using Microsoft.Office.Interop.Excel;
+﻿using BBGWrapper.Responses.MessagePieces;
+using Microsoft.Office.Interop.Excel;
 using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using System;
 using System.Collections.Concurrent;
@@ -28,6 +29,8 @@ namespace PricingSheet
         private BlockData InstrumentDisplayBlock;
         private TaskCompletionSource<bool> _filesLoadedTcs = new TaskCompletionSource<bool>();
 
+        private readonly object _matrixLock = new object();
+
         private void Sheet2_Startup(object sender, System.EventArgs e)
         {
             MtMInstance = this;
@@ -54,7 +57,7 @@ namespace PricingSheet
 
 
         #region Sheet Initialization
-        public void RunInitialization()
+        public async Task RunInitialization()
         {
             var interopSheet = Globals.ThisWorkbook.Worksheets["Sheet2"];
             var vstoSheet = Globals.Factory.GetVstoObject(interopSheet);
@@ -112,6 +115,9 @@ namespace PricingSheet
             CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
             Task.Run(() => LoadAndDisplay(csvReader));
 
+            // Fetch Spot values for underlying
+            Task.Run(() => LoadSpotAndDisplay());
+
             // Display Sheet Values
             SheetDisplay = new SheetDisplay(vstoSheet, Columns: columnData, Block: InstrumentDisplayBlock);
             SheetDisplay.RunDisplay();
@@ -166,21 +172,53 @@ namespace PricingSheet
             Stopwatch sw = Stopwatch.StartNew();
             List<CSVTicker> data = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
             sw.Stop();
-            foreach (var tickerData in data)
+
+            lock (_matrixLock)
             {
-                InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, "Last Update", tickerData.Date);
-                foreach (var mat in tickerData.Maturities)
+                foreach (var tickerData in data)
                 {
-                    InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, string.Concat(mat.Key[0], mat.Key[2]), mat.Value);
+                    InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, "Last Update", tickerData.Date);
+                    foreach (var mat in tickerData.Maturities)
+                    {
+                        InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, string.Concat(mat.Key[0], mat.Key[2]), mat.Value);
+                    }
                 }
+                SheetDisplay.RunBlock();
             }
-            SheetDisplay.RunBlock();
             SignalFilesLoaded();
         }
 
         public void SignalFilesLoaded()
         {
             _filesLoadedTcs.TrySetResult(true);
+        }
+
+        private void LoadSpotAndDisplay()
+        {
+            BloombergDataRequest dataRequest = new BloombergDataRequest(MtMInstance, MtMSheetUniverse.Instruments.Select(x => x.Underlying).Distinct().ToList(), "PX_CLOSE_1D");
+
+            Stopwatch sw = Stopwatch.StartNew();
+            var response = dataRequest.FetchData().ToDictionary(x => x.Instrument, x => x);
+            sw.Stop();
+
+            lock (_matrixLock)
+            {
+                foreach (Instruments instr in MtMSheetUniverse.Instruments)
+                {
+                    if (response.TryGetValue(instr.Underlying, out var apiRes))
+                    {
+                        if (!string.IsNullOrEmpty(apiRes.Error))
+                            Debug.WriteLine(apiRes.Error);
+
+                        InstrumentDisplayBlock.UpdateMatrix(instr.Ticker, "Spot", apiRes.Value);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"No Bloomberg response for {instr.Underlying}");
+                    }
+                }
+                SheetDisplay.RunBlock();
+            }
         }
         #endregion
 
