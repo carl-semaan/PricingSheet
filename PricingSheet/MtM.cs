@@ -20,6 +20,7 @@ using static PricingSheet.MtM;
 using Excel = Microsoft.Office.Interop.Excel;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
+using PricingSheet.Models;
 
 namespace PricingSheet
 {
@@ -98,7 +99,7 @@ namespace PricingSheet
             // Minimizing the Older Maturities
             for (int i = 0; i < MtMSheetUniverse.Maturities.Count; i++)
             {
-                bool isOutdated = DateTime.ParseExact(MtMSheetUniverse.Maturities[i].Maturity, "yyyyMM", CultureInfo.InvariantCulture).Year < DateTime.Now.Year;
+                bool isOutdated = DateTime.ParseExact(MtMSheetUniverse.Maturities[i].Maturity.ToString(), "yyyyMM", CultureInfo.InvariantCulture).Year < DateTime.Now.Year;
                 if (isOutdated)
                 {
                     Excel.Range colRange = interopSheet.Columns[6 + i];
@@ -138,7 +139,7 @@ namespace PricingSheet
 
             foreach (Maturities mat in MtMSheetUniverse.Maturities)
             {
-                bool isOutdated = DateTime.ParseExact(mat.Maturity, "yyyyMM", CultureInfo.InvariantCulture).Year <= DateTime.Now.Year;
+                bool isOutdated = DateTime.ParseExact(mat.Maturity.ToString(), "yyyyMM", CultureInfo.InvariantCulture).Year <= DateTime.Now.Year;
                 headers.Add(new DataCell(mat.MaturityCode, Color: isOutdated ? "Blue" : "Black", IsBold: true, BgColor: isOutdated ? "" : "LightBlue", IsCentered: true));
             }
 
@@ -255,9 +256,9 @@ namespace PricingSheet
             List<UnderlyingSpot> response = rawResponse.Select(x => new UnderlyingSpot(x.Underlying, x.Value)).ToList();
 
             JSONContent content = new JSONContent();
-            content.Instruments = reader.LoadClass<Flux.Instruments>(nameof(Flux.Instruments));
-            content.Maturities = reader.LoadClass<Flux.Maturities>(nameof(Flux.Maturities));
-            content.Fields = reader.LoadClass<Flux.Fields>(nameof(Flux.Fields));
+            content.Instruments = reader.LoadClass<Instruments>(nameof(Instruments));
+            content.Maturities = reader.LoadClass<Maturities>(nameof(Maturities));
+            content.Fields = reader.LoadClass<Fields>(nameof(Fields));
             content.LastPriceLoad = new List<LastPriceLoad> { new LastPriceLoad(DateTime.Today) };
             content.UnderlyingSpot = response;
 
@@ -279,60 +280,6 @@ namespace PricingSheet
             {
                 Instruments = instruments;
                 Maturities = maturities;
-            }
-        }
-
-        public class Instruments
-        {
-            public string Ticker { get; set; }
-            public string Underlying { get; set; }
-            public string Currency { get; set; }
-            public string ICBSuperSectorName { get; set; }
-
-
-            public Instruments() { }
-            public Instruments(string ticker, string underlying, string currency, string ICBSuperSectorName)
-            {
-                Ticker = ticker;
-                Underlying = underlying;
-                Currency = currency;
-                this.ICBSuperSectorName = ICBSuperSectorName;
-            }
-        }
-
-        public class Maturities
-        {
-            public string MaturityCode { get; set; }
-            public string Maturity { get; set; }
-
-            public Maturities() { }
-
-            public Maturities(string Maturity, string MaturityCode)
-            {
-                this.MaturityCode = MaturityCode;
-                this.Maturity = Maturity;
-            }
-        }
-
-        public class UnderlyingSpot
-        {
-            public string Underlying { get; set; }
-            public double? Value { get; set; }
-            public UnderlyingSpot() { }
-            public UnderlyingSpot(string Underlying, double? Value)
-            {
-                this.Underlying = Underlying;
-                this.Value = Value;
-            }
-        }
-
-        public class LastPriceLoad
-        {
-            public DateTime LastLoad { get; set; }
-            public LastPriceLoad() { }
-            public LastPriceLoad(DateTime LastLoad)
-            {
-                this.LastLoad = LastLoad;
             }
         }
         #endregion

@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using static PricingSheet.Flux;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using ExcelVSTO = Microsoft.Office.Tools.Excel;
+using PricingSheet.Models;
 
 namespace PricingSheet
 {
@@ -21,13 +22,13 @@ namespace PricingSheet
         private static readonly int timeoutMs = 5000;
         private CancellationToken _token;
 
-        public List<Flux.Instruments> Instruments { get; set; }
+        public List<Instruments> Instruments { get; set; }
         public List<string> MaturityCodes { get; set; }
         public List<string> Fields { get; set; }
         public ExcelVSTO.Worksheet Sheet { get; set; }
         private Flux _Flux;
         private ConcurrentQueue<Event> _eventQueue = new ConcurrentQueue<Event>();
-        public BloombergPipeline(Flux Flux, ExcelVSTO.Worksheet Sheet, List<Flux.Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
+        public BloombergPipeline(Flux Flux, ExcelVSTO.Worksheet Sheet, List<Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
         {
             _Flux = Flux;
             this.Sheet = Sheet;
@@ -309,7 +310,7 @@ namespace PricingSheet
         }
     }
 
-    public class APIresponse : MtM.UnderlyingSpot
+    public class APIresponse : UnderlyingSpot
     {
         public string Error { get; set; }
 

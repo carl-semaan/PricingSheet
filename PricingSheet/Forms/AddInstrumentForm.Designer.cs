@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
+using PricingSheet.Models;
 
 namespace PricingSheet.Forms
 {
@@ -193,16 +194,16 @@ namespace PricingSheet.Forms
                 return;
             }
 
-            Flux.Instruments newInstrument = new Flux.Instruments(TickerName.ToUpper(), Underlying.ToUpper(), ShortName.ToUpper(), ExchangeCode.ToUpper(), "Equity",CurrencyISO.ToUpper());
+            Instruments newInstrument = new Instruments(TickerName.ToUpper(), Underlying.ToUpper(), ShortName.ToUpper(), ExchangeCode.ToUpper(), "Equity",CurrencyISO.ToUpper());
 
             var flux = Flux.FluxInstance;
             flux.UpdateDisplay(newInstrument);
 
             JSONReader reader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
             Flux.SheetUniverse sheetUniverse = new Flux.SheetUniverse();
-            sheetUniverse.Instruments = reader.LoadClass<Flux.Instruments>(nameof(Flux.Instruments));
-            sheetUniverse.Maturities = reader.LoadClass<Flux.Maturities>(nameof(Flux.Maturities));
-            sheetUniverse.Fields = reader.LoadClass<Flux.Fields>(nameof(Flux.Fields));
+            sheetUniverse.Instruments = reader.LoadClass<Instruments>(nameof(Instruments));
+            sheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities));
+            sheetUniverse.Fields = reader.LoadClass<Fields>(nameof(Fields));
 
             sheetUniverse.Instruments.Add(newInstrument);
 

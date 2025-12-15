@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using static PricingSheet.Flux;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
+using PricingSheet.Models;
 
 namespace PricingSheet
 {
@@ -216,58 +217,6 @@ namespace PricingSheet
                 Instruments = instruments;
                 Maturities = maturities;
                 Fields = fields;
-            }
-        }
-
-        public class Instruments
-        {
-            public string Ticker { get; set; }
-            public string Underlying { get; set; }
-            public string ShortName { get; set; }
-            public string ExchangeCode { get; set; }
-            public string InstrumentType { get; set; }
-            public string Currency { get; set; }
-            public string ICBSuperSectorName { get; set; }
-
-            public Instruments() { }
-            public Instruments(string ticker, string underlying, string shortName, string exchangeCode, string instrumentType, string currency)
-            {
-                Ticker = ticker;
-                Underlying = underlying;
-                ShortName = shortName;
-                ExchangeCode = exchangeCode;
-                InstrumentType = instrumentType;
-                Currency = currency;
-            }
-        }
-
-        public class Maturities
-        {
-            public int Maturity { get; set; }
-            public string MaturityCode { get; set; }
-            public bool Flux { get; set; }
-            public bool Active { get; set; }
-
-            public Maturities() { }
-
-            public Maturities(int Maturity, string MaturityCode, bool flux, bool active)
-            {
-                this.Maturity = Maturity;
-                this.MaturityCode = MaturityCode;
-                Flux = flux;
-                Active = active;
-            }
-        }
-
-        public class Fields
-        {
-            public string Field { get; set; }
-
-            public Fields() { }
-
-            public Fields(string Field)
-            {
-                this.Field = Field;
             }
         }
         #endregion

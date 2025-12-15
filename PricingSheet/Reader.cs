@@ -16,6 +16,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using PricingSheet.Models;
 
 namespace PricingSheet
 {
@@ -33,6 +34,7 @@ namespace PricingSheet
         }
     }
 
+    #region JSON Reader
     public class JSONReader : Reader
     {
         public JSONReader() { }
@@ -65,7 +67,34 @@ namespace PricingSheet
             File.WriteAllText(fullPath, jsonContent);
         }
     }
+    public class JSONContent
+    {
+        public List<Instruments> Instruments { get; set; }
+        public List<Maturities> Maturities { get; set; }
+        public List<Fields> Fields { get; set; }
+        public List<LastPriceLoad> LastPriceLoad { get; set; }
+        public List<UnderlyingSpot> UnderlyingSpot { get; set; }
+        public JSONContent()
+        {
+            Instruments = new List<Instruments>();
+            Maturities = new List<Maturities>();
+            Fields = new List<Fields>();
+            LastPriceLoad = new List<LastPriceLoad>();
+            UnderlyingSpot = new List<UnderlyingSpot>();
+        }
 
+        public JSONContent(List<Instruments> instruments, List<Maturities> maturities, List<Fields> fields, List<LastPriceLoad> lastPriceLoad, List<UnderlyingSpot> underlyingSpot)
+        {
+            Instruments = instruments;
+            Maturities = maturities;
+            Fields = fields;
+            LastPriceLoad = lastPriceLoad;
+            UnderlyingSpot = underlyingSpot;
+        }
+    }
+    #endregion
+
+    #region Excel Reader
     public class ExcelReader : Reader
     {
         public bool ReadHeaders { get; set; }
@@ -148,7 +177,9 @@ namespace PricingSheet
             return result;
         }
     }
+    #endregion
 
+    #region CSV Reader
     public class CSVReader : Reader
     {
         public CSVReader() { }
@@ -263,29 +294,5 @@ namespace PricingSheet
         }
     }
 
-    public class JSONContent
-    {
-        public List<Flux.Instruments> Instruments { get; set; }
-        public List<Flux.Maturities> Maturities { get; set; }
-        public List<Flux.Fields> Fields { get; set; }
-        public List<MtM.LastPriceLoad> LastPriceLoad { get; set; }
-        public List<MtM.UnderlyingSpot> UnderlyingSpot { get; set; }
-        public JSONContent()
-        {
-            Instruments = new List<Flux.Instruments>();
-            Maturities = new List<Flux.Maturities>();
-            Fields = new List<Flux.Fields>();
-            LastPriceLoad = new List<MtM.LastPriceLoad>();
-            UnderlyingSpot = new List<MtM.UnderlyingSpot>();
-        }
-
-        public JSONContent(List<Flux.Instruments> instruments, List<Flux.Maturities> maturities, List<Flux.Fields> fields, List<MtM.LastPriceLoad> lastPriceLoad, List<MtM.UnderlyingSpot> underlyingSpot)
-        {
-            Instruments = instruments;
-            Maturities = maturities;
-            Fields = fields;
-            LastPriceLoad = lastPriceLoad;
-            UnderlyingSpot = underlyingSpot;
-        }
-    }
+    #endregion
 }
