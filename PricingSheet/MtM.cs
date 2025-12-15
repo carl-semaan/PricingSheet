@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -193,28 +194,37 @@ namespace PricingSheet
             _filesLoadedTcs.TrySetResult(true);
         }
 
-        private void LoadSpotAndDisplay()
+        private async Task LoadSpotAndDisplay()
         {
             BloombergDataRequest dataRequest = new BloombergDataRequest(MtMInstance, MtMSheetUniverse.Instruments.Select(x => x.Underlying).Distinct().ToList(), "PX_CLOSE_1D");
 
             Stopwatch sw = Stopwatch.StartNew();
-            var response = dataRequest.FetchData().ToDictionary(x => x.Instrument, x => x);
+            var rawResponse = await dataRequest.FetchData();
             sw.Stop();
+
+            var response = rawResponse.ToDictionary(x => x.Instrument, x => x);
 
             lock (_matrixLock)
             {
                 foreach (Instruments instr in MtMSheetUniverse.Instruments)
                 {
-                    if (response.TryGetValue(instr.Underlying, out var apiRes))
+                    try
                     {
-                        if (!string.IsNullOrEmpty(apiRes.Error))
-                            Debug.WriteLine(apiRes.Error);
+                        if (response.TryGetValue(instr.Underlying, out var apiRes))
+                        {
+                            if (!string.IsNullOrEmpty(apiRes.Error))
+                                Debug.WriteLine(apiRes.Error);
 
-                        InstrumentDisplayBlock.UpdateMatrix(instr.Ticker, "Spot", apiRes.Value);
+                            InstrumentDisplayBlock.UpdateMatrix(instr.Ticker, "Spot", apiRes.Value);
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"No Bloomberg response for {instr.Underlying}");
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        Debug.WriteLine($"No Bloomberg response for {instr.Underlying}");
+                        Debug.WriteLine($"Error processing {instr.Underlying}: {ex.Message}");
                     }
                 }
                 SheetDisplay.RunBlock();

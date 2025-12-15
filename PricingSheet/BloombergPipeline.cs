@@ -201,7 +201,7 @@ namespace PricingSheet
             Field = field;
         }
 
-        public List<APIresponse> FetchData()
+        public async Task<List<APIresponse>> FetchData()
         {
             Dictionary<string, APIresponse> results = new Dictionary<string, APIresponse>();
 
@@ -226,7 +226,16 @@ namespace PricingSheet
                     Request request = reDataService.CreateRequest("ReferenceDataRequest");
 
                     foreach (var instr in Instruments)
-                        request.Append("securities", instr);
+                    {
+                        try
+                        {
+                            request.Append("securities", instr);
+                        }
+                        catch(Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error adding instrument {instr}: {ex}");
+                        }
+                    }
 
                     request.Append("fields", Field);
 
