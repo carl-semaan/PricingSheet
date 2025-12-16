@@ -3,6 +3,7 @@ using Microsoft.Office.Tools.Excel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.RightsManagement;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -57,15 +58,23 @@ namespace PricingSheet
             ExcelInterop.Worksheet interopSheet = Sheet.InnerObject;
             var window = interopSheet.Application.ActiveWindow;
 
-            if (FreezeRow > 0)
-                window.SplitRow = FreezeRow;
+            // Clear existing freeze/splits
+            if (window.FreezePanes)
+                window.FreezePanes = false;
 
-            if (FreezeColumn > 0)
-                window.SplitColumn = FreezeColumn;
+            window.SplitRow = 0;
+            window.SplitColumn = 0;
 
+            // Select the correct cell
+            int targetRow = FreezeRow + 1;
+            int targetColumn = FreezeColumn + 1;
+
+            ExcelInterop.Range cell = interopSheet.Cells[targetRow, targetColumn];
+            cell.Select();
+
+            // 3Freeze panes
             window.FreezePanes = true;
         }
-
     }
 
     #region Sheet Visual Elements
@@ -75,15 +84,17 @@ namespace PricingSheet
         public List<ColumnData> Columns { get; set; }
         public List<RowData> Rows { get; set; }
         public BlockData Block { get; set; }
+        public BlockGrid Grid { get; set; }
         public List<SheetButton> SheetButtons { get; set; }
 
-        public SheetDisplay(ExcelVSTO.Worksheet Sheet, List<ColumnData> Columns = null, List<RowData> Rows = null, BlockData Block = null, List<SheetButton> sheetButtons = null)
+        public SheetDisplay(ExcelVSTO.Worksheet Sheet, List<ColumnData> Columns = null, List<RowData> Rows = null, BlockData Block = null, List<SheetButton> SheetButtons = null, BlockGrid Grid = null)
         {
             this.Sheet = Sheet;
             this.Columns = Columns ?? new List<ColumnData>();
             this.Rows = Rows ?? new List<RowData>();
             this.Block = Block;
-            SheetButtons = sheetButtons ?? new List<SheetButton>();
+            this.SheetButtons = SheetButtons ?? new List<SheetButton>();
+            this.Grid = Grid;
         }
 
         public void RunDisplay(bool batch = true)
@@ -98,8 +109,10 @@ namespace PricingSheet
 
             if (Block != null)
                 RunBlock();
-        }
 
+            if (Grid != null)
+                RunGrid();
+        }
         private void AddButton(SheetButton btn)
         {
             ExcelInterop.Range cell = Sheet.Cells[btn.Row, btn.Column] as ExcelInterop.Range;
@@ -111,40 +124,6 @@ namespace PricingSheet
             button.Text = btn.Name;
 
             button.Click += (s, e) => btn.Action();
-        }
-
-        public void RunBlock()
-        {
-            if (Sheet == null || Block == null || Block.Data == null)
-                return;
-
-            int rows = Block.Data.GetLength(0);
-            int cols = Block.Data.GetLength(1);
-
-            if (rows == 0 || cols == 0)
-                return;
-
-            try
-            {
-                ExcelInterop.Application app = Sheet.Application;
-                bool prevUpdate = app.ScreenUpdating;
-                app.ScreenUpdating = false;
-
-                try
-                {
-                    ExcelInterop.Range topLeft = Sheet.Cells[Block.StartRow, Block.StartColumn];
-                    ExcelInterop.Range bottomRight = Sheet.Cells[Block.StartRow + rows - 1, Block.StartColumn + cols - 1];
-                    ExcelInterop.Range writeRange = Sheet.Range[topLeft, bottomRight];
-
-                    writeRange.HorizontalAlignment = ExcelInterop.XlHAlign.xlHAlignCenter;
-                    writeRange.Value2 = Block.Data;
-                }
-                finally
-                {
-                    app.ScreenUpdating = prevUpdate;
-                }
-            }
-            catch (Exception) { }
         }
 
         public void RunBatch()
@@ -187,6 +166,21 @@ namespace PricingSheet
                 }
             }
         }
+        public void RunBlock()
+        {
+            if (Sheet == null || Block == null || Block.Data == null)
+                return;
+
+            DisplayBatchBlock(Sheet, new List<BlockData>() { Block });
+        }
+
+        public void RunGrid()
+        {
+            if (Sheet == null || Grid.Blocks.Where(x => x == null).Any() || Grid.Blocks.Where(x => x.Data == null).Any())
+                return;
+
+            DisplayBatchBlock(Sheet, Grid.Blocks);
+        }
 
         public static void DisplayBatchRow(ExcelVSTO.Worksheet sheet, List<DataCell> dataCells, int row, int StartColumn)
         {
@@ -201,8 +195,8 @@ namespace PricingSheet
                 sheet.Cells[row, StartColumn + n - 1]
             ];
 
-
-            range.Value2 = values;
+            if (!string.IsNullOrEmpty(values.ToString()))
+                range.Value2 = values;
             if (!string.IsNullOrEmpty(dataCells.FirstOrDefault().Color))
                 range.Font.Color = System.Drawing.ColorTranslator.FromHtml(dataCells.FirstOrDefault().Color);
             if (!string.IsNullOrEmpty(dataCells.FirstOrDefault().BgColor))
@@ -229,7 +223,8 @@ namespace PricingSheet
                 sheet.Cells[StartRow + n - 1, column]
             ];
 
-            range.Value2 = values;
+            if (!string.IsNullOrEmpty(values.ToString()))
+                range.Value2 = values;
             if (!string.IsNullOrEmpty(dataCells.FirstOrDefault().Color))
                 range.Font.Color = System.Drawing.ColorTranslator.FromHtml(dataCells.FirstOrDefault().Color);
             if (!string.IsNullOrEmpty(dataCells.FirstOrDefault().BgColor))
@@ -246,7 +241,9 @@ namespace PricingSheet
         public static void DisplayCell(ExcelVSTO.Worksheet sheet, DataCell dataCell, int row, int column)
         {
             var cell = sheet.Cells[row, column] as ExcelInterop.Range;
-            cell.Value2 = dataCell.Value;
+
+            if (!string.IsNullOrEmpty(dataCell.Value))
+                cell.Value2 = dataCell.Value;
             if (!string.IsNullOrEmpty(dataCell.Color))
                 cell.Font.Color = System.Drawing.ColorTranslator.FromHtml(dataCell.Color);
             if (!string.IsNullOrEmpty(dataCell.BgColor))
@@ -258,6 +255,64 @@ namespace PricingSheet
             if (dataCell.Width != 0)
                 cell.ColumnWidth = dataCell.Width;
             cell.Font.Bold = dataCell.IsBold;
+        }
+
+        public static void DisplayBatchBlock(ExcelVSTO.Worksheet Sheet, List<BlockData> Blocks)
+        {
+            foreach (var Block in Blocks)
+            {
+                int rows = Block.Data.GetLength(0);
+                int cols = Block.Data.GetLength(1);
+
+                if (rows == 0 || cols == 0)
+                    return;
+
+                try
+                {
+                    ExcelInterop.Application app = Sheet.Application;
+                    bool prevUpdate = app.ScreenUpdating;
+                    app.ScreenUpdating = false;
+
+                    try
+                    {
+                        ExcelInterop.Range topLeft = Sheet.Cells[Block.StartRow, Block.StartColumn];
+                        ExcelInterop.Range bottomRight = Sheet.Cells[Block.StartRow + rows - 1, Block.StartColumn + cols - 1];
+                        ExcelInterop.Range writeRange = Sheet.Range[topLeft, bottomRight];
+
+                        writeRange.HorizontalAlignment = ExcelInterop.XlHAlign.xlHAlignCenter;
+                        writeRange.Value2 = Block.Data;
+
+                        if (Block.HasBorders)
+                            DrawOuterBorder(writeRange);
+                        
+                    }
+                    finally
+                    {
+                        app.ScreenUpdating = prevUpdate;
+                    }
+                }
+                catch (Exception) { }
+            }
+        }
+
+        private static void DrawOuterBorder(
+            ExcelInterop.Range range,
+            ExcelInterop.XlBorderWeight weight =
+            ExcelInterop.XlBorderWeight.xlThin)
+        {
+            var b = range.Borders;
+
+            foreach (ExcelInterop.XlBordersIndex edge in new[]
+            {
+                ExcelInterop.XlBordersIndex.xlEdgeTop,
+                ExcelInterop.XlBordersIndex.xlEdgeBottom,
+                ExcelInterop.XlBordersIndex.xlEdgeLeft,
+                ExcelInterop.XlBordersIndex.xlEdgeRight
+            })
+            {
+                b[edge].LineStyle = ExcelInterop.XlLineStyle.xlContinuous;
+                b[edge].Weight = weight;
+            }
         }
     }
 
@@ -342,14 +397,16 @@ namespace PricingSheet
         public int StartColumn { get; set; }
         public List<string> Rows { get; set; }
         public List<string> Columns { get; set; }
+        public bool HasBorders { get; set; }
         public object[,] Data { get; set; }
         public bool DirtyFlag { get; set; } = false;
-        public BlockData(int StartRow, int StartColumn, List<string> Rows, List<string> Columns)
+        public BlockData(int StartRow, int StartColumn, List<string> Rows, List<string> Columns, bool HasBorders = false)
         {
             this.StartRow = StartRow;
             this.StartColumn = StartColumn;
             this.Rows = Rows;
             this.Columns = Columns;
+            this.HasBorders = HasBorders;
             this.Data = BuildDisplayMatrix();
         }
 
@@ -396,6 +453,27 @@ namespace PricingSheet
         }
     }
 
+    public class BlockGrid
+    {
+        public List<BlockData> Blocks { get; set; }
+        public int StartRow { get; set; }
+        public int StartColumn { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public Dictionary<string, BlockData> GridMap { get; set; }
+
+        public BlockGrid() { }
+
+        public BlockGrid(List<BlockData> Blocks, int StartRow, int StartColumn, int Width, int Height)
+        {
+            this.Blocks = Blocks;
+            this.StartRow = StartRow;
+            this.StartColumn = StartColumn;
+            this.Width = Width;
+            this.Height = Height;
+        }
+    }
+
     public class DataCell
     {
         public string Value { get; set; }
@@ -407,7 +485,7 @@ namespace PricingSheet
         public int FontSize { get; set; }
         public double Width { get; set; }
 
-        public DataCell(string Value, string Color = "", string BgColor = "", bool IsBold = false, bool IsCentered = false, int Offset = 0, int FontSize = 0, double Width = 0)
+        public DataCell(string Value = "", string Color = "", string BgColor = "", bool IsBold = false, bool IsCentered = false, int Offset = 0, int FontSize = 0, double Width = 0)
         {
             this.Value = Value;
             this.Color = Color;

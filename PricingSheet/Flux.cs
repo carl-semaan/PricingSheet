@@ -78,9 +78,6 @@ namespace PricingSheet
             FluxSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities)).Where(M => M.Flux).ToList(); 
             FluxSheetUniverse.Fields = reader.LoadClass<Fields>(nameof(Fields));
 
-            //.Where(x => x.MaturityCode != "Z5" && x.MaturityCode != "Z6" && x.MaturityCode != "Z7" && x.MaturityCode != "Z8").ToList();
-            //.Where(x => x.MaturityCode != "Z4" && x.MaturityCode != "Z9" && x.MaturityCode != "Z0" && x.MaturityCode != "Z1").ToList();
-
             // Merging Cells
             for (int i = 0; i < FluxSheetUniverse.Maturities.Count * 2; i += 2)
             {
@@ -124,7 +121,7 @@ namespace PricingSheet
                 this,
                 vstoSheet,
                 FluxSheetUniverse.Instruments,
-                FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(),
+                FluxSheetUniverse.Maturities.Where(x => x.Active).Select(x => x.MaturityCode).ToList(),
                 FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
             );
             Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
@@ -202,22 +199,6 @@ namespace PricingSheet
                 RowDictionary[rowInstrument] = row;
             }
             RowMap = RowDictionary;
-        }
-        #endregion
-
-        #region Sheet Data
-        public class SheetUniverse
-        {
-            public List<Instruments> Instruments { get; set; }
-            public List<Maturities> Maturities { get; set; }
-            public List<Fields> Fields { get; set; }
-            public SheetUniverse() { }
-            public SheetUniverse(List<Instruments> instruments, List<Maturities> maturities, List<Fields> fields)
-            {
-                Instruments = instruments;
-                Maturities = maturities;
-                Fields = fields;
-            }
         }
         #endregion
 

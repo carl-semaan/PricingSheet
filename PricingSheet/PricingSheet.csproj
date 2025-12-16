@@ -229,6 +229,7 @@
     <Compile Include="Models\Instruments.cs" />
     <Compile Include="Models\LastPriceLoad.cs" />
     <Compile Include="Models\Maturities.cs" />
+    <Compile Include="Models\SheetUniverse.cs" />
     <Compile Include="Models\UnderlyingSpot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reader.cs" />

@@ -60,7 +60,6 @@ namespace PricingSheet
 
         #endregion
 
-
         #region Sheet Initialization
         public async Task RunInitialization()
         {
@@ -268,20 +267,6 @@ namespace PricingSheet
         }
 
         private List<UnderlyingSpot> LoadSavedPrices(JSONReader reader) => reader.LoadClass<UnderlyingSpot>(nameof(UnderlyingSpot));
-        #endregion
-
-        #region Sheet Data
-        public class SheetUniverse
-        {
-            public List<Instruments> Instruments { get; set; }
-            public List<Maturities> Maturities { get; set; }
-            public SheetUniverse() { }
-            public SheetUniverse(List<Instruments> instruments, List<Maturities> maturities)
-            {
-                Instruments = instruments;
-                Maturities = maturities;
-            }
-        }
         #endregion
     }
 }
