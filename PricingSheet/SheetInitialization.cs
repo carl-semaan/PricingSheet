@@ -182,6 +182,9 @@ namespace PricingSheet
             DisplayBatchBlock(Sheet, Grid.Blocks);
         }
 
+        public void RunDirtyBlocks(List<BlockData> dirtyBlocks) => UpdateDirtyBlocks(Sheet, dirtyBlocks);
+
+
         public static void DisplayBatchRow(ExcelVSTO.Worksheet sheet, List<DataCell> dataCells, int row, int StartColumn)
         {
             int n = dataCells.Count;
@@ -284,7 +287,7 @@ namespace PricingSheet
 
                         if (Block.HasBorders)
                             DrawOuterBorder(writeRange);
-                        
+
                     }
                     finally
                     {
@@ -294,6 +297,59 @@ namespace PricingSheet
                 catch (Exception) { }
             }
         }
+
+        public static void UpdateDirtyBlocks(
+             ExcelVSTO.Worksheet sheet,
+             List<BlockData> blocks)
+        {
+            if (blocks == null || blocks.Count == 0)
+                return;
+
+            ExcelInterop.Application app = sheet.Application;
+
+            bool prevScreen = app.ScreenUpdating;
+            bool prevEvents = app.EnableEvents;
+            var prevCalc = app.Calculation;
+
+            try
+            {
+                try
+                {
+                    app.ScreenUpdating = false;
+                    app.EnableEvents = false;
+                    app.Calculation = ExcelInterop.XlCalculation.xlCalculationManual;
+
+                    foreach (var block in blocks)
+                    {
+                        int rows = block.Data.GetLength(0);
+                        int cols = block.Data.GetLength(1);
+
+                        if (rows == 0 || cols == 0)
+                            continue;
+
+                        ExcelInterop.Range topLeft =
+                            sheet.Cells[block.StartRow, block.StartColumn];
+
+                        ExcelInterop.Range bottomRight =
+                            sheet.Cells[block.StartRow + rows - 1,
+                                        block.StartColumn + cols - 1];
+
+                        ExcelInterop.Range writeRange =
+                            sheet.Range[topLeft, bottomRight];
+
+                        writeRange.Value2 = block.Data;
+                    }
+                }
+                finally
+                {
+                    app.Calculation = prevCalc;
+                    app.EnableEvents = prevEvents;
+                    app.ScreenUpdating = prevScreen;
+                }
+            }
+            catch { }
+        }
+
 
         private static void DrawOuterBorder(
             ExcelInterop.Range range,

@@ -19,18 +19,18 @@ namespace PricingSheet
 {
     public class BloombergPipeline
     {
-        private static readonly int timeoutMs = 5000;
         private CancellationToken _token;
 
         public List<Instruments> Instruments { get; set; }
         public List<string> MaturityCodes { get; set; }
         public List<string> Fields { get; set; }
         public ExcelVSTO.Worksheet Sheet { get; set; }
-        private Flux _Flux;
+        private Flux FluxInstance = Flux.FluxInstance;
         private ConcurrentQueue<Event> _eventQueue = new ConcurrentQueue<Event>();
-        public BloombergPipeline(Flux Flux, ExcelVSTO.Worksheet Sheet, List<Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
+        private MtM MtMInstance = MtM.MtMInstance;
+        private Univ UnivInstance = Univ.UnivInstance;
+        public BloombergPipeline(ExcelVSTO.Worksheet Sheet, List<Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
         {
-            _Flux = Flux;
             this.Sheet = Sheet;
             this.Instruments = Instruments;
             this.MaturityCodes = MaturityCodes;
@@ -74,7 +74,7 @@ namespace PricingSheet
 
                     while (!token.IsCancellationRequested)
                     {
-                        Event ev = session.NextEvent(timeoutMs);
+                        Event ev = session.NextEvent(Constants.TimeoutMS);
                         _eventQueue.Enqueue(ev);
                     }
 
@@ -127,7 +127,10 @@ namespace PricingSheet
                         {
                             var value = msg.GetElementAsFloat64(field);
                             if (!double.IsNaN(value))
-                                _Flux.UpdateMatrixSafe(instrument, field, value);
+                            {
+                                FluxInstance.UpdateMatrixSafe(instrument, field, value);
+                                UnivInstance.UpdateMatrixSafe(instrument, field, value);
+                            }
                         }
                     }
                 }
@@ -157,6 +160,8 @@ namespace PricingSheet
 
         public void LaunchOfflineTest(CancellationToken token)
         {
+            MtMInstance.FilesLoaded.Wait();
+
             _token = token;
             Random rand = new Random();
             while (!_token.IsCancellationRequested)
@@ -169,11 +174,12 @@ namespace PricingSheet
                         foreach (var field in Fields)
                         {
                             double value = Math.Round(rand.NextDouble() * 100, 2);
-                            _Flux.UpdateMatrixSafe(instr, field, value);
+                            FluxInstance.UpdateMatrixSafe(instr, field, value);
+                            UnivInstance.UpdateMatrixSafe(instr, field, value);
                         }
                     }
                 }
-                Thread.Sleep(1000);
+                Thread.Sleep(Constants.ThreadSleep);
             }
         }
 
@@ -193,7 +199,6 @@ namespace PricingSheet
         public string Field { get; set; }
         public MtM _MtM { get; set; }
 
-        private static readonly int timeoutMs = 5000;
 
         public BloombergDataRequest(MtM mtm, List<string> instruments, string field)
         {
@@ -244,7 +249,7 @@ namespace PricingSheet
 
                     while (true)
                     {
-                        Event ev = session.NextEvent(timeoutMs);
+                        Event ev = session.NextEvent(Constants.TimeoutMS);
 
                         if (ev.Type == Event.EventType.TIMEOUT)
                             throw new TimeoutException("Bloomberg request timed out");

@@ -28,10 +28,10 @@ namespace PricingSheet
     {
         public static MtM MtMInstance { get; private set; }
         public Task FilesLoaded => _filesLoadedTcs.Task;
+        public BlockData InstrumentDisplayBlock;
 
         private SheetUniverse MtMSheetUniverse = new SheetUniverse();
         private SheetDisplay SheetDisplay;
-        private BlockData InstrumentDisplayBlock;
         private TaskCompletionSource<bool> _filesLoadedTcs = new TaskCompletionSource<bool>();
 
         private readonly object _matrixLock = new object();

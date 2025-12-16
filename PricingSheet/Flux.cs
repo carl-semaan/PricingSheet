@@ -118,7 +118,6 @@ namespace PricingSheet
 
             // Launch Bloomberg Pipeline
             BloombergPipeline pipeline = new BloombergPipeline(
-                this,
                 vstoSheet,
                 FluxSheetUniverse.Instruments,
                 FluxSheetUniverse.Maturities.Where(x => x.Active).Select(x => x.MaturityCode).ToList(),
@@ -210,7 +209,7 @@ namespace PricingSheet
             if (token.IsCancellationRequested)
                 return;
 
-            uiTimer.Interval = 500;
+            uiTimer.Interval = Constants.UiTickInterval;
             uiTimer.Tick += (s, e) =>
             {
                 if (InstrumentDisplayBlock.DirtyFlag)
@@ -278,7 +277,6 @@ namespace PricingSheet
 
             // Update Bloomberg Pipeline
             BloombergPipeline pipeline = new BloombergPipeline(
-                this,
                 vstoSheet,
                 FluxSheetUniverse.Instruments,
                 FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(),

@@ -4,8 +4,10 @@ using PricingSheet.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
@@ -15,8 +17,12 @@ namespace PricingSheet
     public partial class Univ
     {
         public static Univ UnivInstance { get; private set; }
+        public BlockGrid Grid { get; set; }
 
         private SheetUniverse UnivSheetUniverse = new SheetUniverse();
+        private SheetDisplay SheetDisplay;
+        private readonly object _matrixLock = new object();
+        private int _isUpdating = 0;
 
         private void Sheet1_Startup(object sender, System.EventArgs e)
         {
@@ -77,11 +83,14 @@ namespace PricingSheet
             columnData.Add(new ColumnData(2, 1, GetRowHeaders(height)));
 
             // Building the Display Grid
-            BlockGrid Grid = BuildDisplayMatrix(width, height);
+            Grid = BuildDisplayMatrix(width, height);
 
             // Display Sheet Values
-            SheetDisplay display = new SheetDisplay(vstoSheet, columnData, rowData, Grid: Grid);
-            display.RunDisplay();
+            SheetDisplay = new SheetDisplay(vstoSheet, columnData, rowData, Grid: Grid);
+            SheetDisplay.RunDisplay();
+
+            // Launch Auto Display Update
+            StartAutoUpdate();
         }
 
         private (int height, int width) GetMatrixDimensions()
@@ -151,7 +160,7 @@ namespace PricingSheet
                     string ticker = UnivSheetUniverse.Instruments[instrumentCtr].Ticker;
                     BlockData newBlock = new BlockData(grid.StartRow + offsetRow, grid.StartColumn + offsetCol, rows, cols, HasBorders: true);
 
-                    foreach(var maturity in rows)
+                    foreach (var maturity in rows)
                         newBlock.UpdateMatrix(maturity, cols[0], ticker);
 
                     grid.Blocks.Add(newBlock);
@@ -166,6 +175,68 @@ namespace PricingSheet
             }
 
             return grid;
+        }
+        #endregion
+
+        #region Sheet Auto Display Update
+        private System.Windows.Forms.Timer uiTimer = new System.Windows.Forms.Timer();
+
+        public void StartAutoUpdate()
+        {
+            uiTimer.Interval = Constants.UiTickInterval;
+
+            uiTimer.Tick += (s, e) =>
+            {
+                if (Interlocked.Exchange(ref _isUpdating, 1) == 1)
+                    return;
+
+                try
+                {
+                    List<BlockData> dirtyBlocks;
+
+                    lock (_matrixLock)
+                    {
+                        dirtyBlocks = Grid.Blocks
+                                          .Where(b => b.DirtyFlag)
+                                          .ToList();
+
+                        foreach (var block in dirtyBlocks)
+                            block.DirtyFlag = false;
+                    }
+
+                    if (dirtyBlocks.Count > 0)
+                    {
+                        Stopwatch sw = Stopwatch.StartNew();
+                        SheetDisplay.RunDirtyBlocks(dirtyBlocks);
+                        sw.Stop();
+                    }
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _isUpdating, 0);
+                }
+            };
+
+            uiTimer.Start();
+        }
+
+        public void UpdateMatrixSafe(string instrument, string field, object value)
+        {
+            string[] parts = instrument.Split('=');
+
+            string maturity = parts[1].Split(' ')[0];
+            string ticker = parts[0];
+
+            BlockData target = Grid.GridMap[ticker];
+            target.DirtyFlag = true;
+
+            object MtMvalue = MtM.MtMInstance.InstrumentDisplayBlock.GetValue(ticker, maturity);
+
+            lock (_matrixLock)
+            {
+                target.UpdateMatrix(maturity, field, value);
+                target.UpdateMatrix(maturity, "MtM", MtMvalue);
+            }
         }
         #endregion
     }
