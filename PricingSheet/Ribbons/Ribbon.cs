@@ -56,6 +56,10 @@ namespace PricingSheet.Ribbons
 
         private void button5_Click_1(object sender, RibbonControlEventArgs e)
         {
+            using (Forms.ManageSubs manageSubs = new Forms.ManageSubs())
+            {
+                manageSubs.ShowDialog();
+            }
 
         }
 
