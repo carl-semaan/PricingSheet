@@ -173,6 +173,7 @@ namespace PricingSheet
 
         public async Task LoadAndDisplay(CSVReader reader)
         {
+            Ribbons.Ribbon.RibbonInstance?.SetStatus(dbStatus: "Loading...");
             Stopwatch sw = Stopwatch.StartNew();
             List<CSVTicker> data = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
             sw.Stop();
@@ -190,6 +191,7 @@ namespace PricingSheet
                 SheetDisplay.RunBlock();
             }
             SignalFilesLoaded();
+            Ribbons.Ribbon.RibbonInstance?.SetStatus(dbStatus: "Loaded");
         }
 
         public void SignalFilesLoaded()
@@ -199,6 +201,7 @@ namespace PricingSheet
 
         private async Task LoadAndDisplay(JSONReader reader)
         {
+            Ribbons.Ribbon.RibbonInstance?.SetStatus(spotStatus: "Loading...");
             List<LastPriceLoad> lastLoad = reader.LoadClass<LastPriceLoad>(nameof(LastPriceLoad));
 
             List<UnderlyingSpot> rawResponse;
@@ -242,6 +245,7 @@ namespace PricingSheet
                 }
                 SheetDisplay.RunBlock();
             }
+            Ribbons.Ribbon.RibbonInstance?.SetStatus(spotStatus: "Loaded");
         }
 
         private async Task<List<UnderlyingSpot>> LoadBloombergPrices(JSONReader reader)

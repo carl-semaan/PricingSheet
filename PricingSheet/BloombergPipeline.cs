@@ -39,6 +39,7 @@ namespace PricingSheet
 
         public void Launch(CancellationToken token)
         {
+            Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Connecting...");
             MtM.MtMInstance.FilesLoaded.Wait();
 
             _token = token;
@@ -58,6 +59,8 @@ namespace PricingSheet
 
                     if (!session.OpenService("//blp/mktdata"))
                         throw new Exception("Failed to open service");
+
+                    Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Live");
 
                     var subscriptions = GetSubscriptions();
                     session.Subscribe(subscriptions);
@@ -161,6 +164,7 @@ namespace PricingSheet
         public void LaunchOfflineTest(CancellationToken token)
         {
             MtMInstance.FilesLoaded.Wait();
+            Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Offline");
 
             _token = token;
             Random rand = new Random();

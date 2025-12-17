@@ -47,10 +47,18 @@ namespace PricingSheet.Ribbons
             this.button4 = this.Factory.CreateRibbonButton();
             this.group3 = this.Factory.CreateRibbonGroup();
             this.Refresh = this.Factory.CreateRibbonButton();
+            this.Status = this.Factory.CreateRibbonGroup();
+            this.label1 = this.Factory.CreateRibbonLabel();
+            this.label2 = this.Factory.CreateRibbonLabel();
+            this.label3 = this.Factory.CreateRibbonLabel();
+            this.DbStatus = this.Factory.CreateRibbonLabel();
+            this.SpotStatus = this.Factory.CreateRibbonLabel();
+            this.BbgConnection = this.Factory.CreateRibbonLabel();
             this.tab1.SuspendLayout();
             this.group1.SuspendLayout();
             this.group2.SuspendLayout();
             this.group3.SuspendLayout();
+            this.Status.SuspendLayout();
             this.SuspendLayout();
             // 
             // tab1
@@ -58,6 +66,7 @@ namespace PricingSheet.Ribbons
             this.tab1.Groups.Add(this.group1);
             this.tab1.Groups.Add(this.group2);
             this.tab1.Groups.Add(this.group3);
+            this.tab1.Groups.Add(this.Status);
             this.tab1.Label = "Pricing Sheet";
             this.tab1.Name = "tab1";
             // 
@@ -122,6 +131,47 @@ namespace PricingSheet.Ribbons
             this.Refresh.ShowImage = true;
             this.Refresh.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button5_Click);
             // 
+            // Status
+            // 
+            this.Status.Items.Add(this.label1);
+            this.Status.Items.Add(this.label2);
+            this.Status.Items.Add(this.label3);
+            this.Status.Items.Add(this.DbStatus);
+            this.Status.Items.Add(this.SpotStatus);
+            this.Status.Items.Add(this.BbgConnection);
+            this.Status.Label = "Sheet Status";
+            this.Status.Name = "Status";
+            // 
+            // label1
+            // 
+            this.label1.Label = "Database Prices:";
+            this.label1.Name = "label1";
+            // 
+            // label2
+            // 
+            this.label2.Label = "Spot Prices:";
+            this.label2.Name = "label2";
+            // 
+            // label3
+            // 
+            this.label3.Label = "Bloomberg Pipeline:";
+            this.label3.Name = "label3";
+            // 
+            // DbStatus
+            // 
+            this.DbStatus.Label = "Pending";
+            this.DbStatus.Name = "DbStatus";
+            // 
+            // SpotStatus
+            // 
+            this.SpotStatus.Label = "Pending";
+            this.SpotStatus.Name = "SpotStatus";
+            // 
+            // BbgConnection
+            // 
+            this.BbgConnection.Label = "Pending";
+            this.BbgConnection.Name = "BbgConnection";
+            // 
             // Ribbon
             // 
             this.Name = "Ribbon";
@@ -136,6 +186,8 @@ namespace PricingSheet.Ribbons
             this.group2.PerformLayout();
             this.group3.ResumeLayout(false);
             this.group3.PerformLayout();
+            this.Status.ResumeLayout(false);
+            this.Status.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -158,6 +210,13 @@ namespace PricingSheet.Ribbons
         internal RibbonButton button4;
         internal RibbonGroup group3;
         internal RibbonButton Refresh;
+        internal RibbonGroup Status;
+        internal RibbonLabel label1;
+        internal RibbonLabel label2;
+        internal RibbonLabel label3;
+        internal RibbonLabel DbStatus;
+        internal RibbonLabel SpotStatus;
+        internal RibbonLabel BbgConnection;
     }
 
     partial class ThisRibbonCollection

@@ -10,8 +10,10 @@ namespace PricingSheet.Ribbons
 {
     public partial class Ribbon
     {
+        public static Ribbon RibbonInstance { get; private set; }
         private void Ribbon1_Load(object sender, RibbonUIEventArgs e)
         {
+            RibbonInstance = this;
             Globals.ThisWorkbook.Application.SheetActivate += Application_SheetActivate;
             UpdateRibbonVisibility();
         }
@@ -32,9 +34,19 @@ namespace PricingSheet.Ribbons
         }
 
         private void button5_Click(object sender, RibbonControlEventArgs e)
-        { 
+        {
             CSVReader reader = new CSVReader(Constants.PricingSheetFolderPath);
             Task.Run(() => MtM.MtMInstance.LoadAndDisplay(reader));
+        }
+
+        public void SetStatus(string dbStatus = "", string spotStatus = "", string bbgStatus = "")
+        {
+            if (!string.IsNullOrEmpty(dbStatus))
+                DbStatus.Label = dbStatus;
+            if (!string.IsNullOrEmpty(spotStatus))
+                SpotStatus.Label = spotStatus;
+            if (!string.IsNullOrEmpty(bbgStatus))
+                BbgConnection.Label = bbgStatus;
         }
     }
 }
