@@ -489,6 +489,9 @@ namespace PricingSheet
             int r = Rows.IndexOf(rowName);
             int c = Columns.IndexOf(ColumnName);
 
+            if (value == null || value.Equals(double.NaN))
+                value = "-";
+
             if (r >= 0 && c >= 0)
                 Data[r, c] = value;
         }
