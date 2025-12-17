@@ -29,7 +29,7 @@ namespace PricingSheet
         private ConcurrentQueue<Event> _eventQueue = new ConcurrentQueue<Event>();
         private MtM MtMInstance = MtM.MtMInstance;
         private Univ UnivInstance = Univ.UnivInstance;
-        private Ribbons.Ribbon RibbonInstance = Ribbons.Ribbon.RibbonInstance;
+        private Ribbons.Ribbon RibbonInstance;
         public BloombergPipeline(ExcelVSTO.Worksheet Sheet, List<Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
         {
             this.Sheet = Sheet;
@@ -40,12 +40,15 @@ namespace PricingSheet
 
         public void Launch(CancellationToken token)
         {
+            // Waiting for MtM files to load
+            MtM.MtMInstance.FilesLoaded.Wait();
+
+            // Setting the Ribbon Instance
+            RibbonInstance = Ribbons.Ribbon.RibbonInstance;
+
             // Setting Ribbon Data
             RibbonInstance?.SetStatus(bbgStatus: "Connecting...");
             RibbonInstance?.SetAcrtiveSubscription(0);
-
-            // Waiting for MtM files to load
-            MtM.MtMInstance.FilesLoaded.Wait();
 
             // Initializing the cancellation token
             _token = token;
@@ -262,7 +265,7 @@ namespace PricingSheet
                         {
                             request.Append("securities", instr);
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             System.Diagnostics.Debug.WriteLine($"Error adding instrument {instr}: {ex}");
                         }
