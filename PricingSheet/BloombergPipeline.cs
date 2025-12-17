@@ -81,6 +81,8 @@ namespace PricingSheet
                         _eventQueue.Enqueue(ev);
                     }
 
+                    Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Disconnected");
+
                     foreach (var consumerThread in consumerThreads)
                         consumerThread.Join();
                 }
@@ -88,6 +90,7 @@ namespace PricingSheet
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error: {ex}");
+                Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Failed");
             }
         }
 
