@@ -29,6 +29,7 @@ namespace PricingSheet
         private ConcurrentQueue<Event> _eventQueue = new ConcurrentQueue<Event>();
         private MtM MtMInstance = MtM.MtMInstance;
         private Univ UnivInstance = Univ.UnivInstance;
+        private Ribbons.Ribbon RibbonInstance = Ribbons.Ribbon.RibbonInstance;
         public BloombergPipeline(ExcelVSTO.Worksheet Sheet, List<Instruments> Instruments, List<string> MaturityCodes, List<string> Fields)
         {
             this.Sheet = Sheet;
@@ -39,11 +40,17 @@ namespace PricingSheet
 
         public void Launch(CancellationToken token)
         {
-            Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Connecting...");
+            // Setting Ribbon Data
+            RibbonInstance?.SetStatus(bbgStatus: "Connecting...");
+            RibbonInstance?.SetAcrtiveSubscription(0);
+
+            // Waiting for MtM files to load
             MtM.MtMInstance.FilesLoaded.Wait();
 
+            // Initializing the cancellation token
             _token = token;
 
+            // Setting Session Options
             SessionOptions options = new SessionOptions
             {
                 ServerHost = "localhost",
@@ -54,18 +61,26 @@ namespace PricingSheet
             {
                 using (Session session = new Session(options))
                 {
+                    // Starting Session
                     if (!session.Start())
                         throw new Exception("Failed to start session");
 
+                    // Opening Market Data Service
                     if (!session.OpenService("//blp/mktdata"))
                         throw new Exception("Failed to open service");
 
-                    Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Live");
+                    // Setting the Ribbon Status to Live
+                    RibbonInstance?.SetStatus(bbgStatus: "Live");
 
+                    //  Subscribing to live data
                     var subscriptions = GetSubscriptions();
                     session.Subscribe(subscriptions);
                     System.Diagnostics.Debug.WriteLine("Subscribed to live data.");
 
+                    // Updating Ribbon with active subscriptions count
+                    RibbonInstance?.SetAcrtiveSubscription(subscriptions.Count);
+
+                    // Setting up consumer threads
                     var consumerThreads = new List<Thread>();
                     int consumerthreadsCount = Environment.ProcessorCount;
                     for (int i = 0; i < consumerthreadsCount; i++)
@@ -75,14 +90,17 @@ namespace PricingSheet
                         consumerThreads.Add(consumerThread);
                     }
 
+                    // Reading events from Bloomberg and enqueueing them
                     while (!token.IsCancellationRequested)
                     {
                         Event ev = session.NextEvent(Constants.TimeoutMS);
                         _eventQueue.Enqueue(ev);
                     }
 
-                    Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Disconnected");
+                    // Setting Ribbon Status to Disconnected
+                    RibbonInstance?.SetStatus(bbgStatus: "Disconnected");
 
+                    // Waiting for consumer threads to finish
                     foreach (var consumerThread in consumerThreads)
                         consumerThread.Join();
                 }
@@ -90,7 +108,7 @@ namespace PricingSheet
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error: {ex}");
-                Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Failed");
+                RibbonInstance?.SetStatus(bbgStatus: "Failed");
             }
         }
 
@@ -167,7 +185,7 @@ namespace PricingSheet
         public void LaunchOfflineTest(CancellationToken token)
         {
             MtMInstance.FilesLoaded.Wait();
-            Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Offline");
+            RibbonInstance?.SetStatus(bbgStatus: "Offline");
 
             _token = token;
             Random rand = new Random();

@@ -54,11 +54,15 @@ namespace PricingSheet.Ribbons
             this.DbStatus = this.Factory.CreateRibbonLabel();
             this.SpotStatus = this.Factory.CreateRibbonLabel();
             this.BbgConnection = this.Factory.CreateRibbonLabel();
+            this.SubManager = this.Factory.CreateRibbonGroup();
+            this.button5 = this.Factory.CreateRibbonButton();
+            this.ActiveSubs = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.group1.SuspendLayout();
             this.group2.SuspendLayout();
             this.group3.SuspendLayout();
             this.Status.SuspendLayout();
+            this.SubManager.SuspendLayout();
             this.SuspendLayout();
             // 
             // tab1
@@ -67,6 +71,7 @@ namespace PricingSheet.Ribbons
             this.tab1.Groups.Add(this.group2);
             this.tab1.Groups.Add(this.group3);
             this.tab1.Groups.Add(this.Status);
+            this.tab1.Groups.Add(this.SubManager);
             this.tab1.Label = "Pricing Sheet";
             this.tab1.Name = "tab1";
             // 
@@ -172,6 +177,29 @@ namespace PricingSheet.Ribbons
             this.BbgConnection.Label = "Pending";
             this.BbgConnection.Name = "BbgConnection";
             // 
+            // SubManager
+            // 
+            this.SubManager.Items.Add(this.ActiveSubs);
+            this.SubManager.Items.Add(this.button5);
+            this.SubManager.Label = "Subscription Manager";
+            this.SubManager.Name = "SubManager";
+            // 
+            // button5
+            // 
+            this.button5.Image = ((System.Drawing.Image)(resources.GetObject("button5.Image")));
+            this.button5.Label = "Manage Subscriptions";
+            this.button5.Name = "button5";
+            this.button5.ShowImage = true;
+            this.button5.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button5_Click_1);
+            // 
+            // ActiveSubs
+            // 
+            this.ActiveSubs.Image = ((System.Drawing.Image)(resources.GetObject("ActiveSubs.Image")));
+            this.ActiveSubs.Label = "Active Subscriptions: 0/0";
+            this.ActiveSubs.Name = "ActiveSubs";
+            this.ActiveSubs.ShowImage = true;
+            this.ActiveSubs.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button6_Click);
+            // 
             // Ribbon
             // 
             this.Name = "Ribbon";
@@ -188,6 +216,8 @@ namespace PricingSheet.Ribbons
             this.group3.PerformLayout();
             this.Status.ResumeLayout(false);
             this.Status.PerformLayout();
+            this.SubManager.ResumeLayout(false);
+            this.SubManager.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -217,6 +247,9 @@ namespace PricingSheet.Ribbons
         internal RibbonLabel DbStatus;
         internal RibbonLabel SpotStatus;
         internal RibbonLabel BbgConnection;
+        internal RibbonGroup SubManager;
+        internal RibbonButton button5;
+        internal RibbonButton ActiveSubs;
     }
 
     partial class ThisRibbonCollection

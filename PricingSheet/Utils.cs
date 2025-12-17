@@ -35,6 +35,7 @@ namespace PricingSheet
         public const int TimeoutMS = 5000;
         public const int UiTickInterval = 500;
         public const int ThreadSleep = 1000;
+        public const int MaxActiveInstruments = 3500;
     }
 
 }

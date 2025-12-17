@@ -48,5 +48,20 @@ namespace PricingSheet.Ribbons
             if (!string.IsNullOrEmpty(bbgStatus))
                 BbgConnection.Label = bbgStatus;
         }
+
+        public void SetAcrtiveSubscription(int count)
+        {
+            ActiveSubs.Label = $"Active Subscriptions: {count}/{Constants.MaxActiveInstruments}";
+        }
+
+        private void button5_Click_1(object sender, RibbonControlEventArgs e)
+        {
+
+        }
+
+        private void button6_Click(object sender, RibbonControlEventArgs e)
+        {
+
+        }
     }
 }
