@@ -187,7 +187,12 @@ namespace PricingSheet
 
         public void LaunchOfflineTest(CancellationToken token)
         {
+            // Waiting for MtM files to load 
             MtMInstance.FilesLoaded.Wait();
+
+            // Setting the Ribbon Instance
+            RibbonInstance = Ribbons.Ribbon.RibbonInstance;
+
             RibbonInstance?.SetStatus(bbgStatus: "Offline");
 
             _token = token;
