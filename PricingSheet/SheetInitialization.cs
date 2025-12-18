@@ -511,7 +511,30 @@ namespace PricingSheet
             return Data[r, c];
         }
 
+        private object[,] ClearDisplayMatrix(List<int> ExceptionRow, List<int> ExceptionCol)
+        {
+            int rows = Rows.Count;
+            int cols = Columns.Count;
+
+            object[,] matrix = new object[rows, cols];
+
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    if (ExceptionCol.Contains(c) || ExceptionRow.Contains(r))
+                        matrix[r, c] = this.Data[r, c];
+                    else
+                        matrix[r, c] = "-";
+                }
+            }
+
+            return matrix;
+        }
+
         public void ClearMatrix() => this.Data = BuildDisplayMatrix();
+
+        public void ClearMatrix(List<int> ExceptionRow, List<int> ExceptionCol) => this.Data = ClearDisplayMatrix(ExceptionRow, ExceptionCol);
     }
 
     public class BlockGrid
@@ -536,8 +559,11 @@ namespace PricingSheet
 
         public void ClearGrid()
         {
+            List<int> ExceptionRows = new List<int>();
+            List<int> ExceptionCols = new List<int> { 0 };
+
             foreach (var block in Blocks)
-                block.ClearMatrix();
+                block.ClearMatrix(ExceptionRows, ExceptionCols);
         }
     }
 
