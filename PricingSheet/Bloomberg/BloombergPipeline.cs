@@ -77,6 +77,17 @@ namespace PricingSheet
 
                     //  Subscribing to live data
                     var subscriptions = GetSubscriptions();
+
+                    if (subscriptions.Count > Constants.MaxActiveInstruments)
+                    {
+                        throw new Exception($"Number of subscriptions ({subscriptions.Count}) exceeds the maximum allowed ({Constants.MaxActiveInstruments}).");
+                    }
+                    else if (subscriptions.Count == 0)
+                    {
+                        RibbonInstance?.SetStatus(bbgStatus: "Pending");
+                        return;
+                    }
+
                     session.Subscribe(subscriptions);
                     System.Diagnostics.Debug.WriteLine("Subscribed to live data.");
 
