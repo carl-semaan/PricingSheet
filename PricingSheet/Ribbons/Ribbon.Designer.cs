@@ -221,6 +221,7 @@ namespace PricingSheet.Ribbons
             // 
             // SpeechAlerts
             // 
+            this.SpeechAlerts.Checked = true;
             this.SpeechAlerts.Label = "Speech Alerts";
             this.SpeechAlerts.Name = "SpeechAlerts";
             this.SpeechAlerts.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.toggleButton1_Click_1);
