@@ -10,8 +10,10 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using static PricingSheet.Flux;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
+using ExcelVSTO = Microsoft.Office.Tools.Excel;
 using Office = Microsoft.Office.Core;
 using PricingSheet.Models;
+using DocumentFormat.OpenXml.Vml.Office;
 
 namespace PricingSheet
 {
@@ -22,11 +24,12 @@ namespace PricingSheet
         public static Dictionary<(string maturity, string field), int> ColMap = new Dictionary<(string maturity, string field), int>();
         public static Dictionary<string, int> RowMap = new Dictionary<string, int>();
         public CancellationTokenSource BloombegCts = new CancellationTokenSource();
+        public SheetUniverse FluxSheetUniverse = new SheetUniverse();
 
-        private SheetUniverse FluxSheetUniverse = new SheetUniverse();
         private SheetDisplay SheetDisplay;
         private BlockData InstrumentDisplayBlock;
         private readonly object _matrixLock = new object();
+        private ExcelVSTO.Worksheet vstoSheet;
 
         private void Sheet3_Startup(object sender, System.EventArgs e)
         {
@@ -56,7 +59,7 @@ namespace PricingSheet
         private void RunInitialization()
         {
             var interopSheet = Globals.ThisWorkbook.Worksheets["Sheet3"];
-            var vstoSheet = Globals.Factory.GetVstoObject(interopSheet);
+            vstoSheet = Globals.Factory.GetVstoObject(interopSheet);
 
             // Initializing Sheet 
             SheetInitialization sheetInitialization = new SheetInitialization(
@@ -75,7 +78,7 @@ namespace PricingSheet
             JSONReader reader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
 
             FluxSheetUniverse.Instruments = reader.LoadClass<Instruments>(nameof(Instruments));
-            FluxSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities)).Where(M => M.Flux).ToList(); 
+            FluxSheetUniverse.Maturities = reader.LoadClass<Maturities>(nameof(Maturities)).Where(M => M.Flux).ToList();
             FluxSheetUniverse.Fields = reader.LoadClass<Fields>(nameof(Fields));
 
             // Merging Cells
@@ -117,13 +120,7 @@ namespace PricingSheet
             InitializeDictionaries(interopSheet, FluxSheetUniverse.Maturities.Select(x => x.MaturityCode).ToList(), FluxSheetUniverse.Fields.Select(x => x.Field).ToList(), FluxSheetUniverse.Instruments.Select(x => x.Ticker).ToList());
 
             // Launch Bloomberg Pipeline
-            BloombergPipeline pipeline = new BloombergPipeline(
-                vstoSheet,
-                FluxSheetUniverse.Instruments,
-                FluxSheetUniverse.Maturities.Where(x => x.Active).Select(x => x.MaturityCode).ToList(),
-                FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
-            );
-            Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
+            LaunchBloomberg();
 
             // Launch Auto Display Update
             StartAutoUpdate(BloombegCts.Token);
@@ -198,6 +195,18 @@ namespace PricingSheet
                 RowDictionary[rowInstrument] = row;
             }
             RowMap = RowDictionary;
+        }
+
+        public void LaunchBloomberg()
+        {
+            BloombergPipeline pipeline = new BloombergPipeline(
+                vstoSheet,
+                FluxSheetUniverse.Instruments,
+                FluxSheetUniverse.Maturities.Where(x => x.Active).Select(x => x.MaturityCode).ToList(),
+                FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
+            );
+
+            Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
         }
         #endregion
 
@@ -283,6 +292,30 @@ namespace PricingSheet
                 FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
             );
             Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
+        }
+
+        public void UpdateSubscriptions(List<Maturities> newMaturities)
+        {
+            BloombegCts.Cancel();
+            BloombegCts = new CancellationTokenSource();
+
+            Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Pending");
+
+            InstrumentDisplayBlock.ClearMatrix();
+
+            lock (_matrixLock)
+            {
+                FluxSheetUniverse.Maturities = newMaturities.Where(M => M.Flux).ToList();
+
+                if(!FluxSheetUniverse.Maturities.Where(x => x.Active).Any())
+                {
+                    // Clear the sheet if no maturities are selected
+                    SheetDisplay.RunDisplay();
+                    return;
+                }
+            }
+
+            LaunchBloomberg();
         }
         #endregion
     }

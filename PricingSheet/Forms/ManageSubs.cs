@@ -6,6 +6,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -51,6 +52,7 @@ namespace PricingSheet.Forms
         {
             Task.Run(() =>
             {
+                // Saving the updated flags the the json file
                 JSONReader reader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
 
                 List<Maturities> newMaturities = reader.LoadClass<Maturities>(nameof(Maturities));
@@ -70,6 +72,12 @@ namespace PricingSheet.Forms
                     );
 
                 reader.SaveJSON(content);
+
+                // Updating the flux sheet data
+                Flux.FluxInstance.UpdateSubscriptions(newMaturities);
+
+                // Updating the univ sheet data
+                Univ.UnivInstance.UpdateSubscriptions(newMaturities);
             });
 
             this.Close();

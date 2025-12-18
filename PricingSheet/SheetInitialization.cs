@@ -510,6 +510,8 @@ namespace PricingSheet
             int c = Columns.IndexOf(ColumnName);
             return Data[r, c];
         }
+
+        public void ClearMatrix() => this.Data = BuildDisplayMatrix();
     }
 
     public class BlockGrid
@@ -530,6 +532,12 @@ namespace PricingSheet
             this.StartColumn = StartColumn;
             this.Width = Width;
             this.Height = Height;
+        }
+
+        public void ClearGrid()
+        {
+            foreach (var block in Blocks)
+                block.ClearMatrix();
         }
     }
 

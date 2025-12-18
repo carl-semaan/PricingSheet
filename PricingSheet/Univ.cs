@@ -76,7 +76,7 @@ namespace PricingSheet
             UnivSheetUniverse.Fields = jsonReader.LoadClass<Fields>(nameof(Fields));
 
             // Setting up Matrix Dimensions
-            (int height, int width) = GetMatrixDimensions();
+            (int width, int height) = GetMatrixDimensions();
 
             // Setting up the columns and rows headers
             rowData.Add(new RowData(1, 3, GetColHeaders(width)));
@@ -93,7 +93,7 @@ namespace PricingSheet
             StartAutoUpdate();
         }
 
-        private (int height, int width) GetMatrixDimensions()
+        private (int width, int height) GetMatrixDimensions()
         {
             if (UnivSheetUniverse.Instruments.Count == 0)
                 return (0, 0);
@@ -101,7 +101,7 @@ namespace PricingSheet
             int height = (int)Math.Sqrt(UnivSheetUniverse.Instruments.Count);
             int width = (int)Math.Ceiling((double)UnivSheetUniverse.Instruments.Count / height);
 
-            return (height, width);
+            return (width, height);
         }
 
         private List<DataCell> GetColHeaders(int width)
@@ -237,6 +237,17 @@ namespace PricingSheet
                 target.UpdateMatrix(maturity, field, value);
                 target.UpdateMatrix(maturity, "MtM", MtMvalue);
             }
+        }
+
+        public void UpdateSubscriptions(List<Maturities> newMaturities)
+        {
+            lock (_matrixLock)
+            {
+                UnivSheetUniverse.Maturities = newMaturities.Where(x => x.Flux).ToList();
+            }
+
+            Grid.ClearGrid();
+            Grid.Blocks.ForEach(x => x.DirtyFlag = true);
         }
         #endregion
     }
