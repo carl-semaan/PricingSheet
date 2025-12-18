@@ -178,20 +178,26 @@ namespace PricingSheet
             List<CSVTicker> data = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
             sw.Stop();
 
-            lock (_matrixLock)
+            if (data.Any())
             {
-                foreach (var tickerData in data)
+                lock (_matrixLock)
                 {
-                    InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, "Last Update", tickerData.Date);
-                    foreach (var mat in tickerData.Maturities)
+                    foreach (var tickerData in data)
                     {
-                        InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, string.Concat(mat.Key[0], mat.Key[2]), mat.Value);
+                        InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, "Last Update", tickerData.Date);
+                        foreach (var mat in tickerData.Maturities)
+                        {
+                            InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, string.Concat(mat.Key[0], mat.Key[2]), mat.Value);
+                        }
                     }
+                    SheetDisplay.RunBlock();
                 }
-                SheetDisplay.RunBlock();
+                Ribbons.Ribbon.RibbonInstance?.SetStatus(dbStatus: "Loaded");
             }
+            else
+                Ribbons.Ribbon.RibbonInstance?.SetStatus(dbStatus: "Failed");
+
             SignalFilesLoaded();
-            Ribbons.Ribbon.RibbonInstance?.SetStatus(dbStatus: "Loaded");
         }
 
         public void SignalFilesLoaded()
@@ -206,13 +212,9 @@ namespace PricingSheet
 
             List<UnderlyingSpot> rawResponse;
             if (lastLoad.Select(x => x.LastLoad).FirstOrDefault() < DateTime.Today)
-            {
                 rawResponse = await LoadBloombergPrices(reader);
-            }
             else
-            {
                 rawResponse = LoadSavedPrices(reader);
-            }
 
             var response = rawResponse.ToDictionary(x => x.Underlying, x => x);
 
@@ -245,7 +247,11 @@ namespace PricingSheet
                 }
                 SheetDisplay.RunBlock();
             }
-            Ribbons.Ribbon.RibbonInstance?.SetStatus(spotStatus: "Loaded");
+
+            if (response.Any())
+                Ribbons.Ribbon.RibbonInstance?.SetStatus(spotStatus: "Loaded");
+            else
+                Ribbons.Ribbon.RibbonInstance?.SetStatus(spotStatus: "Failed");
         }
 
         private async Task<List<UnderlyingSpot>> LoadBloombergPrices(JSONReader reader)
