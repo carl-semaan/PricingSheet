@@ -40,13 +40,8 @@ namespace PricingSheet.Ribbons
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Ribbon));
             this.tab1 = this.Factory.CreateRibbonTab();
             this.group1 = this.Factory.CreateRibbonGroup();
-            this.button1 = this.Factory.CreateRibbonButton();
-            this.button2 = this.Factory.CreateRibbonButton();
             this.group2 = this.Factory.CreateRibbonGroup();
-            this.button3 = this.Factory.CreateRibbonButton();
-            this.button4 = this.Factory.CreateRibbonButton();
             this.group3 = this.Factory.CreateRibbonGroup();
-            this.Refresh = this.Factory.CreateRibbonButton();
             this.Status = this.Factory.CreateRibbonGroup();
             this.label1 = this.Factory.CreateRibbonLabel();
             this.label2 = this.Factory.CreateRibbonLabel();
@@ -55,14 +50,23 @@ namespace PricingSheet.Ribbons
             this.SpotStatus = this.Factory.CreateRibbonLabel();
             this.BbgConnection = this.Factory.CreateRibbonLabel();
             this.SubManager = this.Factory.CreateRibbonGroup();
+            this.button1 = this.Factory.CreateRibbonButton();
+            this.button2 = this.Factory.CreateRibbonButton();
+            this.button3 = this.Factory.CreateRibbonButton();
+            this.button4 = this.Factory.CreateRibbonButton();
+            this.Refresh = this.Factory.CreateRibbonButton();
             this.ActiveSubs = this.Factory.CreateRibbonButton();
             this.button5 = this.Factory.CreateRibbonButton();
+            this.Notifications = this.Factory.CreateRibbonGroup();
+            this.EmailAlerts = this.Factory.CreateRibbonToggleButton();
+            this.SpeechAlerts = this.Factory.CreateRibbonToggleButton();
             this.tab1.SuspendLayout();
             this.group1.SuspendLayout();
             this.group2.SuspendLayout();
             this.group3.SuspendLayout();
             this.Status.SuspendLayout();
             this.SubManager.SuspendLayout();
+            this.Notifications.SuspendLayout();
             this.SuspendLayout();
             // 
             // tab1
@@ -72,6 +76,7 @@ namespace PricingSheet.Ribbons
             this.tab1.Groups.Add(this.group3);
             this.tab1.Groups.Add(this.Status);
             this.tab1.Groups.Add(this.SubManager);
+            this.tab1.Groups.Add(this.Notifications);
             this.tab1.Label = "Pricing Sheet";
             this.tab1.Name = "tab1";
             // 
@@ -82,22 +87,6 @@ namespace PricingSheet.Ribbons
             this.group1.Label = "Instruments";
             this.group1.Name = "group1";
             // 
-            // button1
-            // 
-            this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button1.Image = ((System.Drawing.Image)(resources.GetObject("button1.Image")));
-            this.button1.Label = "Add";
-            this.button1.Name = "button1";
-            this.button1.ShowImage = true;
-            // 
-            // button2
-            // 
-            this.button2.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button2.Image = ((System.Drawing.Image)(resources.GetObject("button2.Image")));
-            this.button2.Label = "Edit";
-            this.button2.Name = "button2";
-            this.button2.ShowImage = true;
-            // 
             // group2
             // 
             this.group2.Items.Add(this.button3);
@@ -105,36 +94,11 @@ namespace PricingSheet.Ribbons
             this.group2.Label = "Maturities";
             this.group2.Name = "group2";
             // 
-            // button3
-            // 
-            this.button3.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button3.Image = ((System.Drawing.Image)(resources.GetObject("button3.Image")));
-            this.button3.Label = "Add";
-            this.button3.Name = "button3";
-            this.button3.ShowImage = true;
-            // 
-            // button4
-            // 
-            this.button4.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button4.Image = ((System.Drawing.Image)(resources.GetObject("button4.Image")));
-            this.button4.Label = "Edit";
-            this.button4.Name = "button4";
-            this.button4.ShowImage = true;
-            // 
             // group3
             // 
             this.group3.Items.Add(this.Refresh);
             this.group3.Label = "MtM Sheet";
             this.group3.Name = "group3";
-            // 
-            // Refresh
-            // 
-            this.Refresh.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.Refresh.Image = global::PricingSheet.Properties.Resources.refresh_page_option;
-            this.Refresh.Label = "Refresh";
-            this.Refresh.Name = "Refresh";
-            this.Refresh.ShowImage = true;
-            this.Refresh.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button5_Click);
             // 
             // Status
             // 
@@ -184,6 +148,47 @@ namespace PricingSheet.Ribbons
             this.SubManager.Label = "Subscription Manager";
             this.SubManager.Name = "SubManager";
             // 
+            // button1
+            // 
+            this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button1.Image = ((System.Drawing.Image)(resources.GetObject("button1.Image")));
+            this.button1.Label = "Add";
+            this.button1.Name = "button1";
+            this.button1.ShowImage = true;
+            // 
+            // button2
+            // 
+            this.button2.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button2.Image = ((System.Drawing.Image)(resources.GetObject("button2.Image")));
+            this.button2.Label = "Edit";
+            this.button2.Name = "button2";
+            this.button2.ShowImage = true;
+            // 
+            // button3
+            // 
+            this.button3.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button3.Image = ((System.Drawing.Image)(resources.GetObject("button3.Image")));
+            this.button3.Label = "Add";
+            this.button3.Name = "button3";
+            this.button3.ShowImage = true;
+            // 
+            // button4
+            // 
+            this.button4.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button4.Image = ((System.Drawing.Image)(resources.GetObject("button4.Image")));
+            this.button4.Label = "Edit";
+            this.button4.Name = "button4";
+            this.button4.ShowImage = true;
+            // 
+            // Refresh
+            // 
+            this.Refresh.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.Refresh.Image = global::PricingSheet.Properties.Resources.refresh_page_option;
+            this.Refresh.Label = "Refresh";
+            this.Refresh.Name = "Refresh";
+            this.Refresh.ShowImage = true;
+            this.Refresh.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button5_Click);
+            // 
             // ActiveSubs
             // 
             this.ActiveSubs.Image = ((System.Drawing.Image)(resources.GetObject("ActiveSubs.Image")));
@@ -199,6 +204,26 @@ namespace PricingSheet.Ribbons
             this.button5.Name = "button5";
             this.button5.ShowImage = true;
             this.button5.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button5_Click_1);
+            // 
+            // Notifications
+            // 
+            this.Notifications.Items.Add(this.EmailAlerts);
+            this.Notifications.Items.Add(this.SpeechAlerts);
+            this.Notifications.Label = "Notifications";
+            this.Notifications.Name = "Notifications";
+            // 
+            // EmailAlerts
+            // 
+            this.EmailAlerts.Checked = true;
+            this.EmailAlerts.Label = "Email Alerts";
+            this.EmailAlerts.Name = "EmailAlerts";
+            this.EmailAlerts.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.EmailAlerts_Click);
+            // 
+            // SpeechAlerts
+            // 
+            this.SpeechAlerts.Label = "Speech Alerts";
+            this.SpeechAlerts.Name = "SpeechAlerts";
+            this.SpeechAlerts.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.toggleButton1_Click_1);
             // 
             // Ribbon
             // 
@@ -218,6 +243,8 @@ namespace PricingSheet.Ribbons
             this.Status.PerformLayout();
             this.SubManager.ResumeLayout(false);
             this.SubManager.PerformLayout();
+            this.Notifications.ResumeLayout(false);
+            this.Notifications.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -250,6 +277,9 @@ namespace PricingSheet.Ribbons
         internal RibbonGroup SubManager;
         internal RibbonButton button5;
         internal RibbonButton ActiveSubs;
+        internal RibbonGroup Notifications;
+        internal RibbonToggleButton EmailAlerts;
+        internal RibbonToggleButton SpeechAlerts;
     }
 
     partial class ThisRibbonCollection

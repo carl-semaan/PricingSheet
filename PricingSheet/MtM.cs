@@ -21,6 +21,8 @@ using Excel = Microsoft.Office.Interop.Excel;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
 using PricingSheet.Models;
+using PricingSheet.Readers;
+using PricingSheet.Bloomberg;
 
 namespace PricingSheet
 {

@@ -1,10 +1,12 @@
-﻿using Microsoft.Office.Tools.Ribbon;
+﻿using Microsoft.Office.Interop.Excel;
+using Microsoft.Office.Tools.Ribbon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
+using PricingSheet.Readers;
 
 namespace PricingSheet.Ribbons
 {
@@ -64,6 +66,20 @@ namespace PricingSheet.Ribbons
         }
 
         private void button6_Click(object sender, RibbonControlEventArgs e)
+        {
+
+        }
+
+        private void EmailAlerts_Click(object sender, RibbonControlEventArgs e)
+        {
+
+        }
+
+        private void Speak_Click(object sender, RibbonControlEventArgs e)
+        {
+        }
+
+        private void toggleButton1_Click_1(object sender, RibbonControlEventArgs e)
         {
 
         }
