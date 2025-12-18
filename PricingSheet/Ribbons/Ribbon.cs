@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using PricingSheet.Readers;
+using PricingSheet.Alerts;
 
 namespace PricingSheet.Ribbons
 {
@@ -41,7 +42,7 @@ namespace PricingSheet.Ribbons
             Task.Run(() => MtM.MtMInstance.LoadAndDisplay(reader));
         }
 
-        public Task SetStatus(string dbStatus = "", string spotStatus = "", string bbgStatus = "")
+        public void SetStatus(string dbStatus = "", string spotStatus = "", string bbgStatus = "")
         {
             if (!string.IsNullOrEmpty(dbStatus))
                 DbStatus.Label = dbStatus;
@@ -49,8 +50,6 @@ namespace PricingSheet.Ribbons
                 SpotStatus.Label = spotStatus;
             if (!string.IsNullOrEmpty(bbgStatus))
                 BbgConnection.Label = bbgStatus;
-
-            return Task.CompletedTask;
         }
 
         public void SetAcrtiveSubscription(int count)
@@ -84,6 +83,12 @@ namespace PricingSheet.Ribbons
         private void toggleButton1_Click_1(object sender, RibbonControlEventArgs e)
         {
 
+        }
+
+        private void button6_Click_1(object sender, RibbonControlEventArgs e)
+        {
+            SpeechAlerts alert = new SpeechAlerts();
+            alert.Speak("Bid alert on V2VD Z5");
         }
     }
 }

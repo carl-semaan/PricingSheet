@@ -60,6 +60,7 @@ namespace PricingSheet.Ribbons
             this.Notifications = this.Factory.CreateRibbonGroup();
             this.EmailAlerts = this.Factory.CreateRibbonToggleButton();
             this.SpeechAlerts = this.Factory.CreateRibbonToggleButton();
+            this.button6 = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.group1.SuspendLayout();
             this.group2.SuspendLayout();
@@ -209,6 +210,7 @@ namespace PricingSheet.Ribbons
             // 
             this.Notifications.Items.Add(this.EmailAlerts);
             this.Notifications.Items.Add(this.SpeechAlerts);
+            this.Notifications.Items.Add(this.button6);
             this.Notifications.Label = "Notifications";
             this.Notifications.Name = "Notifications";
             // 
@@ -225,6 +227,12 @@ namespace PricingSheet.Ribbons
             this.SpeechAlerts.Label = "Speech Alerts";
             this.SpeechAlerts.Name = "SpeechAlerts";
             this.SpeechAlerts.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.toggleButton1_Click_1);
+            // 
+            // button6
+            // 
+            this.button6.Label = "Speech test";
+            this.button6.Name = "button6";
+            this.button6.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button6_Click_1);
             // 
             // Ribbon
             // 
@@ -281,6 +289,7 @@ namespace PricingSheet.Ribbons
         internal RibbonGroup Notifications;
         internal RibbonToggleButton EmailAlerts;
         internal RibbonToggleButton SpeechAlerts;
+        internal RibbonButton button6;
     }
 
     partial class ThisRibbonCollection

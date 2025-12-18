@@ -108,6 +108,10 @@ namespace PricingSheet
                     while (!token.IsCancellationRequested)
                     {
                         Event ev = session.NextEvent(Constants.TimeoutMS);
+
+                        if (ev.Type == Event.EventType.TIMEOUT)
+                            continue;
+
                         _eventQueue.Enqueue(ev);
                     }
 

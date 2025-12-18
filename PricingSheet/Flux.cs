@@ -295,12 +295,12 @@ namespace PricingSheet
             Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
         }
 
-        public async Task UpdateSubscriptions(List<Maturities> newMaturities)
+        public void UpdateSubscriptions(List<Maturities> newMaturities)
         {
             BloombegCts.Cancel();
             BloombegCts = new CancellationTokenSource();
 
-            await Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Pending");
+            Ribbons.Ribbon.RibbonInstance?.SetStatus(bbgStatus: "Pending");
 
             InstrumentDisplayBlock.ClearMatrix();
 
