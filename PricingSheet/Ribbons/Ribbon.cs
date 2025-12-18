@@ -41,7 +41,7 @@ namespace PricingSheet.Ribbons
             Task.Run(() => MtM.MtMInstance.LoadAndDisplay(reader));
         }
 
-        public void SetStatus(string dbStatus = "", string spotStatus = "", string bbgStatus = "")
+        public Task SetStatus(string dbStatus = "", string spotStatus = "", string bbgStatus = "")
         {
             if (!string.IsNullOrEmpty(dbStatus))
                 DbStatus.Label = dbStatus;
@@ -49,6 +49,8 @@ namespace PricingSheet.Ribbons
                 SpotStatus.Label = spotStatus;
             if (!string.IsNullOrEmpty(bbgStatus))
                 BbgConnection.Label = bbgStatus;
+
+            return Task.CompletedTask;
         }
 
         public void SetAcrtiveSubscription(int count)
