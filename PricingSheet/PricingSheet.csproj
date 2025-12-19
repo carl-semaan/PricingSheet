@@ -234,6 +234,7 @@
     <Compile Include="Forms\ManageSubs.Designer.cs">
       <DependentUpon>ManageSubs.cs</DependentUpon>
     </Compile>
+    <Compile Include="Models\Alert.cs" />
     <Compile Include="Models\Fields.cs" />
     <Compile Include="Models\Instruments.cs" />
     <Compile Include="Models\LastPriceLoad.cs" />

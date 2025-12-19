@@ -12,6 +12,7 @@ using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
 using PricingSheet.Readers;
+using System.Collections.Concurrent;
 
 namespace PricingSheet
 {
@@ -24,6 +25,7 @@ namespace PricingSheet
         private SheetDisplay SheetDisplay;
         private readonly object _matrixLock = new object();
         private int _isUpdating = 0;
+        private ConcurrentQueue<Alert> Alerts = new ConcurrentQueue<Alert>();
 
         private void Sheet1_Startup(object sender, System.EventArgs e)
         {
@@ -249,6 +251,13 @@ namespace PricingSheet
 
             Grid.ClearGrid();
             Grid.Blocks.ForEach(x => x.DirtyFlag = true);
+        }
+        #endregion
+
+        #region Sheet Alert System
+        public void LanuchSpeechAlerts()
+        {
+
         }
         #endregion
     }

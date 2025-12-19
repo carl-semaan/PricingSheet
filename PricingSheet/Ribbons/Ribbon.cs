@@ -38,8 +38,8 @@ namespace PricingSheet.Ribbons
 
         private void button5_Click(object sender, RibbonControlEventArgs e)
         {
-            CSVReader reader = new CSVReader(Constants.PricingSheetFolderPath);
-            Task.Run(() => MtM.MtMInstance.LoadAndDisplay(reader));
+            CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
+            Task.Run(() => MtM.MtMInstance.LoadAndDisplay(csvReader));
         }
 
         public void SetStatus(string dbStatus = "", string spotStatus = "", string bbgStatus = "")
