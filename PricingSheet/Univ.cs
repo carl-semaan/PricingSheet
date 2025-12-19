@@ -1,18 +1,20 @@
 ﻿using DocumentFormat.OpenXml.Office2010.Word.DrawingShape;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using PricingSheet.Models;
+using PricingSheet.Readers;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
-using PricingSheet.Readers;
-using System.Collections.Concurrent;
 
 namespace PricingSheet
 {
@@ -25,6 +27,7 @@ namespace PricingSheet
         private SheetDisplay SheetDisplay;
         private readonly object _matrixLock = new object();
         private ConcurrentQueue<Alert> Alerts = new ConcurrentQueue<Alert>();
+        private readonly HashSet<Alert> _activeAlerts = new HashSet<Alert>();
 
         private void Sheet1_Startup(object sender, System.EventArgs e)
         {
@@ -203,8 +206,10 @@ namespace PricingSheet
                     SheetDisplay.RunDirtyBlocks(dirtyBlocks);
                     sw.Stop();
                 }
+
+                FindAlerts();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Debug.WriteLine($"Error: {ex}");
             }
@@ -242,6 +247,49 @@ namespace PricingSheet
         #endregion
 
         #region Sheet Alert System
+        public void FindAlerts()
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            lock (_matrixLock)
+            {
+                foreach (var block in Grid.Blocks)
+                {
+                    string instrument = block.GetValue(block.Rows[0], "Ticker") as string;
+                    string underlying = UnivSheetUniverse.Instruments.FirstOrDefault(x => x.Ticker == instrument)?.Underlying;
+
+                    foreach (var row in block.Rows)
+                    {
+                        double askPrice = block.GetValue(row, "ASK") as double? ?? double.NaN;
+                        double bidPrice = block.GetValue(row, "BID") as double? ?? double.NaN;
+                        double MtMPrice = block.GetValue(row, "MtM") as double? ?? double.NaN;
+
+                        if (!double.IsNaN(askPrice) && !double.IsNaN(MtMPrice) && askPrice < MtMPrice)
+                        {
+                            Alert alert = new Alert(instrument, underlying, row, "ASK", Alert.AlertCondition.LessThan);
+                            if (_activeAlerts.Add(alert))
+                                Alerts.Enqueue(alert);
+                        }
+                        else
+                        {
+                            _activeAlerts.Remove(new Alert(instrument, underlying, row, "ASK", Alert.AlertCondition.LessThan));
+                        }
+
+                        if (!double.IsNaN(bidPrice) && !double.IsNaN(MtMPrice) && bidPrice > MtMPrice)
+                        {
+                            Alert alert = new Alert(instrument, underlying, row, "BID", Alert.AlertCondition.GreaterThan);
+                            if (_activeAlerts.Add(alert))
+                                Alerts.Enqueue(alert);
+                        }
+                        else
+                        {
+                            _activeAlerts.Remove(new Alert(instrument, underlying, row, "BID", Alert.AlertCondition.GreaterThan));
+                        }
+                    }
+                }
+            }
+            sw.Stop();
+        }
+
         public void LanuchSpeechAlerts()
         {
 
