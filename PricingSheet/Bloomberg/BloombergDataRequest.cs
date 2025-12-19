@@ -64,7 +64,7 @@ namespace PricingSheet.Bloomberg
 
                     while (true)
                     {
-                        Event ev = session.NextEvent(Constants.TimeoutMS);
+                        Event ev = session.NextEvent(Constants.RequestTimeoutMS);
 
                         if (ev.Type == Event.EventType.TIMEOUT)
                             throw new TimeoutException("Bloomberg request timed out");

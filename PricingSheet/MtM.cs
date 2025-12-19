@@ -266,6 +266,9 @@ namespace PricingSheet
 
             List<UnderlyingSpot> response = rawResponse.Select(x => new UnderlyingSpot(x.Underlying, x.Value)).ToList();
 
+            if (response.Count == 0)
+                return response;
+
             JSONContent content = new JSONContent();
             content.Instruments = reader.LoadClass<Instruments>(nameof(Instruments));
             content.Maturities = reader.LoadClass<Maturities>(nameof(Maturities));

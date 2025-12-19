@@ -33,6 +33,7 @@ namespace PricingSheet
         public const string JSONFileName = "PricingSheetData.json";
         public const string TickersDBFolderPath = @"G:\Shared drives\Arbitrage\Tools\9.Pricing Sheets\SSDF Database-Testing";
         public const int TimeoutMS = 100;
+        public const int RequestTimeoutMS = 5000;
         public const int UiTickInterval = 500;
         public const int ThreadSleep = 1000;
         public const int MaxActiveInstruments = 3500;
