@@ -241,8 +241,13 @@ namespace PricingSheet
                 UnivSheetUniverse.Maturities = newMaturities.Where(x => x.Flux).ToList();
             }
 
+            // Rebuild the display grid
             Grid.ClearGrid();
             Grid.Blocks.ForEach(x => x.DirtyFlag = true);
+
+            // Clear the alerts
+            Alerts = new ConcurrentQueue<Alert>();
+            _activeAlerts.Clear();
         }
         #endregion
 
