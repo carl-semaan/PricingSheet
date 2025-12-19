@@ -38,8 +38,7 @@ namespace PricingSheet.Ribbons
 
         private void button5_Click(object sender, RibbonControlEventArgs e)
         {
-            CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
-            Task.Run(() => MtM.MtMInstance.LoadAndDisplay(csvReader));
+            MtM.MtMInstance.RefreshSheet();
         }
 
         public void SetStatus(string dbStatus = "", string spotStatus = "", string bbgStatus = "")
@@ -63,7 +62,6 @@ namespace PricingSheet.Ribbons
             {
                 manageSubs.ShowDialog();
             }
-
         }
 
         private void button6_Click(object sender, RibbonControlEventArgs e)

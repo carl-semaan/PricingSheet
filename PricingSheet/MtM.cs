@@ -283,5 +283,26 @@ namespace PricingSheet
 
         private List<UnderlyingSpot> LoadSavedPrices(JSONReader reader) => reader.LoadClass<UnderlyingSpot>(nameof(UnderlyingSpot));
         #endregion
+
+        #region Sheet Update
+        public async void RefreshSheet()
+        {
+            // Clear Sheet
+            List<int> ExceptionCol = new List<int>() { 0 };
+            InstrumentDisplayBlock.ClearMatrix(new List<int>(), ExceptionCol);
+
+            // Display Empty Block
+            SheetDisplay.RunBlock();
+
+            // Fetch Tickers Data
+            CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
+            JSONReader jsonReader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
+            Task.Run(async () =>
+            {
+                await LoadAndDisplay(csvReader);
+                LoadAndDisplay(jsonReader);
+            });
+        }
+        #endregion
     }
 }

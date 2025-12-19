@@ -40,8 +40,13 @@ namespace PricingSheet.Ribbons
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Ribbon));
             this.tab1 = this.Factory.CreateRibbonTab();
             this.group1 = this.Factory.CreateRibbonGroup();
+            this.button1 = this.Factory.CreateRibbonButton();
+            this.button2 = this.Factory.CreateRibbonButton();
             this.group2 = this.Factory.CreateRibbonGroup();
+            this.button3 = this.Factory.CreateRibbonButton();
+            this.button4 = this.Factory.CreateRibbonButton();
             this.group3 = this.Factory.CreateRibbonGroup();
+            this.Refresh = this.Factory.CreateRibbonButton();
             this.Status = this.Factory.CreateRibbonGroup();
             this.label1 = this.Factory.CreateRibbonLabel();
             this.label2 = this.Factory.CreateRibbonLabel();
@@ -50,11 +55,6 @@ namespace PricingSheet.Ribbons
             this.SpotStatus = this.Factory.CreateRibbonLabel();
             this.BbgConnection = this.Factory.CreateRibbonLabel();
             this.SubManager = this.Factory.CreateRibbonGroup();
-            this.button1 = this.Factory.CreateRibbonButton();
-            this.button2 = this.Factory.CreateRibbonButton();
-            this.button3 = this.Factory.CreateRibbonButton();
-            this.button4 = this.Factory.CreateRibbonButton();
-            this.Refresh = this.Factory.CreateRibbonButton();
             this.ActiveSubs = this.Factory.CreateRibbonButton();
             this.button5 = this.Factory.CreateRibbonButton();
             this.Notifications = this.Factory.CreateRibbonGroup();
@@ -88,6 +88,22 @@ namespace PricingSheet.Ribbons
             this.group1.Label = "Instruments";
             this.group1.Name = "group1";
             // 
+            // button1
+            // 
+            this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button1.Image = ((System.Drawing.Image)(resources.GetObject("button1.Image")));
+            this.button1.Label = "Add";
+            this.button1.Name = "button1";
+            this.button1.ShowImage = true;
+            // 
+            // button2
+            // 
+            this.button2.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button2.Image = ((System.Drawing.Image)(resources.GetObject("button2.Image")));
+            this.button2.Label = "Edit";
+            this.button2.Name = "button2";
+            this.button2.ShowImage = true;
+            // 
             // group2
             // 
             this.group2.Items.Add(this.button3);
@@ -95,11 +111,36 @@ namespace PricingSheet.Ribbons
             this.group2.Label = "Maturities";
             this.group2.Name = "group2";
             // 
+            // button3
+            // 
+            this.button3.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button3.Image = ((System.Drawing.Image)(resources.GetObject("button3.Image")));
+            this.button3.Label = "Add";
+            this.button3.Name = "button3";
+            this.button3.ShowImage = true;
+            // 
+            // button4
+            // 
+            this.button4.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button4.Image = ((System.Drawing.Image)(resources.GetObject("button4.Image")));
+            this.button4.Label = "Edit";
+            this.button4.Name = "button4";
+            this.button4.ShowImage = true;
+            // 
             // group3
             // 
             this.group3.Items.Add(this.Refresh);
             this.group3.Label = "MtM Sheet";
             this.group3.Name = "group3";
+            // 
+            // Refresh
+            // 
+            this.Refresh.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.Refresh.Image = global::PricingSheet.Properties.Resources.refresh_page_option;
+            this.Refresh.Label = "Refresh";
+            this.Refresh.Name = "Refresh";
+            this.Refresh.ShowImage = true;
+            this.Refresh.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button5_Click);
             // 
             // Status
             // 
@@ -148,47 +189,6 @@ namespace PricingSheet.Ribbons
             this.SubManager.Items.Add(this.button5);
             this.SubManager.Label = "Subscription Manager";
             this.SubManager.Name = "SubManager";
-            // 
-            // button1
-            // 
-            this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button1.Image = ((System.Drawing.Image)(resources.GetObject("button1.Image")));
-            this.button1.Label = "Add";
-            this.button1.Name = "button1";
-            this.button1.ShowImage = true;
-            // 
-            // button2
-            // 
-            this.button2.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button2.Image = ((System.Drawing.Image)(resources.GetObject("button2.Image")));
-            this.button2.Label = "Edit";
-            this.button2.Name = "button2";
-            this.button2.ShowImage = true;
-            // 
-            // button3
-            // 
-            this.button3.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button3.Image = ((System.Drawing.Image)(resources.GetObject("button3.Image")));
-            this.button3.Label = "Add";
-            this.button3.Name = "button3";
-            this.button3.ShowImage = true;
-            // 
-            // button4
-            // 
-            this.button4.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button4.Image = ((System.Drawing.Image)(resources.GetObject("button4.Image")));
-            this.button4.Label = "Edit";
-            this.button4.Name = "button4";
-            this.button4.ShowImage = true;
-            // 
-            // Refresh
-            // 
-            this.Refresh.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.Refresh.Image = global::PricingSheet.Properties.Resources.refresh_page_option;
-            this.Refresh.Label = "Refresh";
-            this.Refresh.Name = "Refresh";
-            this.Refresh.ShowImage = true;
-            this.Refresh.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button5_Click);
             // 
             // ActiveSubs
             // 
