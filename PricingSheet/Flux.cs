@@ -222,16 +222,25 @@ namespace PricingSheet
             uiTimer.Interval = Constants.UiTickInterval;
             uiTimer.Tick += (s, e) =>
             {
-                if (InstrumentDisplayBlock.DirtyFlag)
-                {
-                    InstrumentDisplayBlock.DirtyFlag = false;
-                    lock (_matrixLock)
-                    {
-                        SheetDisplay.RunBlock();
-                    }
-                }
+                // Flux Sheet Update
+                AutoUpdate();
+
+                // Univ Sheet Update
+                Univ.UnivInstance.AutoUpdate();
             };
             uiTimer.Start();
+        }
+
+        private void AutoUpdate()
+        {
+            if (InstrumentDisplayBlock.DirtyFlag)
+            {
+                InstrumentDisplayBlock.DirtyFlag = false;
+                lock (_matrixLock)
+                {
+                    SheetDisplay.RunBlock();
+                }
+            }
         }
 
         public void UpdateMatrixSafe(string instrument, string field, object value)
@@ -308,7 +317,7 @@ namespace PricingSheet
             {
                 FluxSheetUniverse.Maturities = newMaturities.Where(M => M.Flux).ToList();
 
-                if(!FluxSheetUniverse.Maturities.Where(x => x.Active).Any())
+                if (!FluxSheetUniverse.Maturities.Where(x => x.Active).Any())
                 {
                     // Clear the sheet if no maturities are selected
                     SheetDisplay.RunDisplay();

@@ -24,7 +24,6 @@ namespace PricingSheet
         private SheetUniverse UnivSheetUniverse = new SheetUniverse();
         private SheetDisplay SheetDisplay;
         private readonly object _matrixLock = new object();
-        private int _isUpdating = 0;
         private ConcurrentQueue<Alert> Alerts = new ConcurrentQueue<Alert>();
 
         private void Sheet1_Startup(object sender, System.EventArgs e)
@@ -91,9 +90,6 @@ namespace PricingSheet
             // Display Sheet Values
             SheetDisplay = new SheetDisplay(vstoSheet, columnData, rowData, Grid: Grid);
             SheetDisplay.RunDisplay();
-
-            // Launch Auto Display Update
-            StartAutoUpdate();
         }
 
         private (int width, int height) GetMatrixDimensions()
@@ -184,43 +180,34 @@ namespace PricingSheet
         #region Sheet Auto Display Update
         private System.Windows.Forms.Timer uiTimer = new System.Windows.Forms.Timer();
 
-        public void StartAutoUpdate()
+        // Auto update method will be called in the Flux sheet to trigger the updates simultaneously to not cause excessive flickering or freeze of the Excel UI
+        public void AutoUpdate()
         {
-            uiTimer.Interval = Constants.UiTickInterval;
-
-            uiTimer.Tick += (s, e) =>
+            try
             {
-                if (Interlocked.Exchange(ref _isUpdating, 1) == 1)
-                    return;
+                List<BlockData> dirtyBlocks;
 
-                try
+                lock (_matrixLock)
                 {
-                    List<BlockData> dirtyBlocks;
+                    dirtyBlocks = Grid.Blocks
+                                      .Where(b => b.DirtyFlag)
+                                      .ToList();
 
-                    lock (_matrixLock)
-                    {
-                        dirtyBlocks = Grid.Blocks
-                                          .Where(b => b.DirtyFlag)
-                                          .ToList();
-
-                        foreach (var block in dirtyBlocks)
-                            block.DirtyFlag = false;
-                    }
-
-                    if (dirtyBlocks.Count > 0)
-                    {
-                        Stopwatch sw = Stopwatch.StartNew();
-                        SheetDisplay.RunDirtyBlocks(dirtyBlocks);
-                        sw.Stop();
-                    }
+                    foreach (var block in dirtyBlocks)
+                        block.DirtyFlag = false;
                 }
-                finally
+
+                if (dirtyBlocks.Count > 0)
                 {
-                    Interlocked.Exchange(ref _isUpdating, 0);
+                    Stopwatch sw = Stopwatch.StartNew();
+                    SheetDisplay.RunDirtyBlocks(dirtyBlocks);
+                    sw.Stop();
                 }
-            };
-
-            uiTimer.Start();
+            }
+            catch(Exception ex)
+            {
+                Debug.WriteLine($"Error: {ex}");
+            }
         }
 
         public void UpdateMatrixSafe(string instrument, string field, object value)
