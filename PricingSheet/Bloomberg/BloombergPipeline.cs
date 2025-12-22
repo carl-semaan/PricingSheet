@@ -48,7 +48,7 @@ namespace PricingSheet
 
             // Setting Ribbon Data
             RibbonInstance?.SetStatus(bbgStatus: "Connecting...");
-            RibbonInstance?.SetAcrtiveSubscription(0);
+            RibbonInstance?.SetActiveSubscription(0);
 
             // Initializing the cancellation token
             _token = token;
@@ -85,6 +85,7 @@ namespace PricingSheet
                     else if (subscriptions.Count == 0)
                     {
                         RibbonInstance?.SetStatus(bbgStatus: "Pending");
+                        RibbonInstance?.SetActiveSubscription(subscriptions.Count);
                         return;
                     }
 
@@ -92,7 +93,7 @@ namespace PricingSheet
                     System.Diagnostics.Debug.WriteLine("Subscribed to live data.");
 
                     // Updating Ribbon with active subscriptions count
-                    RibbonInstance?.SetAcrtiveSubscription(subscriptions.Count);
+                    RibbonInstance?.SetActiveSubscription(subscriptions.Count);
 
                     // Setting up consumer threads
                     var consumerThreads = new List<Thread>();

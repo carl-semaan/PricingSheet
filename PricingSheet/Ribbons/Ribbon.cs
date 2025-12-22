@@ -51,7 +51,7 @@ namespace PricingSheet.Ribbons
                 BbgConnection.Label = bbgStatus;
         }
 
-        public void SetAcrtiveSubscription(int count)
+        public void SetActiveSubscription(int count)
         {
             ActiveSubs.Label = $"Active Subscriptions: {count}/{Constants.MaxActiveInstruments}";
         }
