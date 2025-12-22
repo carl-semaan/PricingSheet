@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 using Office = Microsoft.Office.Core;
+using MelanionMailer;
 
 namespace PricingSheet
 {
@@ -97,7 +98,7 @@ namespace PricingSheet
             SheetDisplay.RunDisplay();
 
             // Launch Alerts
-            LaunchSpeechAlerts();
+            LaunchAlerts();
         }
 
         private (int width, int height) GetMatrixDimensions()
@@ -307,7 +308,7 @@ namespace PricingSheet
             sw.Stop();
         }
 
-        public void LaunchSpeechAlerts()
+        public void LaunchAlerts()
         {
             Task.Run(() =>
             {
@@ -315,13 +316,17 @@ namespace PricingSheet
 
                 while (true)
                 {
-                    if (Ribbons.Ribbon.RibbonInstance == null || !Ribbons.Ribbon.RibbonInstance.SpeechAlerts.Checked || !Alerts.TryDequeue(out Alert alert))
+                    if (Ribbons.Ribbon.RibbonInstance == null || !Alerts.TryDequeue(out Alert alert))
                     {
                         Thread.Sleep(100);
                         continue;
                     }
 
-                    speechAlerts.Speak($"{alert.Field} alert on {alert.Underlying} {alert.Maturity}");
+                    if (Ribbons.Ribbon.RibbonInstance.SpeechAlerts.Checked)
+                        speechAlerts.Speak(alert.ToString());
+
+                    if (Ribbons.Ribbon.RibbonInstance.EmailAlerts.Checked)
+                        Task.Run(() => Mailer.SendMailHtml(alert.ToString(), "", alert.ToString(), Constants.Emails));
 
                     lock (_alertsLock)
                     {

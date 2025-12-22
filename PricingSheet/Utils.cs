@@ -37,7 +37,7 @@ namespace PricingSheet
         public const int UiTickInterval = 500;
         public const int ThreadSleep = 1000;
         public const int MaxActiveInstruments = 3500;
-        public readonly List<string> Emails = new List<string> { "carl.semaan@melanion.com" };
+        public static List<string> Emails = new List<string> { "carl.semaan@melanion.com" };
         // tony.khreich@melanion.com
         // roland.nasr@melanion.com
     }

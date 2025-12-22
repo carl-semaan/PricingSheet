@@ -15,7 +15,7 @@ namespace PricingSheet.Alerts
         public VoiceGender Gender { get; set; }
         public VoiceAge Age { get; set; }
 
-        public SpeechAlerts(int volume = 100, int rate = 0, VoiceGender gender = VoiceGender.Male, VoiceAge age = VoiceAge.Adult)
+        public SpeechAlerts(int volume = 100, int rate = -1, VoiceGender gender = VoiceGender.Male, VoiceAge age = VoiceAge.Adult)
         {
             Volume = volume > 100 ? 100 : volume < 0 ? 0 : volume;
             Rate = rate > 10 ? 10 : rate < -10 ? -10 : rate;

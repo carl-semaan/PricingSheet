@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Spreadsheet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,6 +53,11 @@ namespace PricingSheet.Models
                 hash = hash * 23 + Condition.GetHashCode();
                 return hash;
             }
+        }
+
+        public override string ToString()
+        {
+            return $"{Field} alert on {Underlying} {Maturity}";
         }
 
         public enum AlertCondition
