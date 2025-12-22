@@ -271,6 +271,7 @@ namespace PricingSheet
                 {
                     string instrument = block.GetValue(block.Rows[0], "Ticker") as string;
                     string underlying = UnivSheetUniverse.Instruments.FirstOrDefault(x => x.Ticker == instrument)?.Underlying;
+                    string shortName = UnivSheetUniverse.Instruments.FirstOrDefault(x => x.Ticker == instrument)?.ShortName;
 
                     foreach (var row in block.Rows)
                     {
@@ -282,24 +283,24 @@ namespace PricingSheet
                         {
                             if (!double.IsNaN(askPrice) && !double.IsNaN(MtMPrice) && askPrice < MtMPrice)
                             {
-                                Alert alert = new Alert(instrument, underlying, row, "ASK", Alert.AlertCondition.LessThan);
+                                Alert alert = new Alert(instrument, underlying, shortName, row, "ASK", Alert.AlertCondition.LessThan);
                                 if (_activeAlerts.Add(alert))
                                     Alerts.Enqueue(alert);
                             }
                             else
                             {
-                                _activeAlerts.Remove(new Alert(instrument, underlying, row, "ASK", Alert.AlertCondition.LessThan));
+                                _activeAlerts.Remove(new Alert(instrument, underlying, shortName, row, "ASK", Alert.AlertCondition.LessThan));
                             }
 
                             if (!double.IsNaN(bidPrice) && !double.IsNaN(MtMPrice) && bidPrice > MtMPrice)
                             {
-                                Alert alert = new Alert(instrument, underlying, row, "BID", Alert.AlertCondition.GreaterThan);
+                                Alert alert = new Alert(instrument, underlying, shortName, row, "BID", Alert.AlertCondition.GreaterThan);
                                 if (_activeAlerts.Add(alert))
                                     Alerts.Enqueue(alert);
                             }
                             else
                             {
-                                _activeAlerts.Remove(new Alert(instrument, underlying, row, "BID", Alert.AlertCondition.GreaterThan));
+                                _activeAlerts.Remove(new Alert(instrument, underlying, shortName, row, "BID", Alert.AlertCondition.GreaterThan));
                             }
                         }
                     }
