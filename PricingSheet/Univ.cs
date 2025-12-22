@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Office2010.Word.DrawingShape;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.VisualStudio.Tools.Applications.Runtime;
+using PricingSheet.Alerts;
 using PricingSheet.Models;
 using PricingSheet.Readers;
 using System;
@@ -25,9 +26,10 @@ namespace PricingSheet
 
         private SheetUniverse UnivSheetUniverse = new SheetUniverse();
         private SheetDisplay SheetDisplay;
-        private readonly object _matrixLock = new object();
         private ConcurrentQueue<Alert> Alerts = new ConcurrentQueue<Alert>();
         private readonly HashSet<Alert> _activeAlerts = new HashSet<Alert>();
+        private readonly object _matrixLock = new object();
+        private readonly object _alertsLock = new object();
 
         private void Sheet1_Startup(object sender, System.EventArgs e)
         {
@@ -93,6 +95,9 @@ namespace PricingSheet
             // Display Sheet Values
             SheetDisplay = new SheetDisplay(vstoSheet, columnData, rowData, Grid: Grid);
             SheetDisplay.RunDisplay();
+
+            // Launch Alerts
+            LaunchSpeechAlerts();
         }
 
         private (int width, int height) GetMatrixDimensions()
@@ -255,6 +260,10 @@ namespace PricingSheet
         public void FindAlerts()
         {
             Stopwatch sw = Stopwatch.StartNew();
+
+            if (Ribbons.Ribbon.RibbonInstance == null || !Ribbons.Ribbon.RibbonInstance.SpeechAlerts.Checked)
+                return;
+
             lock (_matrixLock)
             {
                 foreach (var block in Grid.Blocks)
@@ -268,26 +277,29 @@ namespace PricingSheet
                         double bidPrice = block.GetValue(row, "BID") as double? ?? double.NaN;
                         double MtMPrice = block.GetValue(row, "MtM") as double? ?? double.NaN;
 
-                        if (!double.IsNaN(askPrice) && !double.IsNaN(MtMPrice) && askPrice < MtMPrice)
+                        lock (_alertsLock)
                         {
-                            Alert alert = new Alert(instrument, underlying, row, "ASK", Alert.AlertCondition.LessThan);
-                            if (_activeAlerts.Add(alert))
-                                Alerts.Enqueue(alert);
-                        }
-                        else
-                        {
-                            _activeAlerts.Remove(new Alert(instrument, underlying, row, "ASK", Alert.AlertCondition.LessThan));
-                        }
+                            if (!double.IsNaN(askPrice) && !double.IsNaN(MtMPrice) && askPrice < MtMPrice)
+                            {
+                                Alert alert = new Alert(instrument, underlying, row, "ASK", Alert.AlertCondition.LessThan);
+                                if (_activeAlerts.Add(alert))
+                                    Alerts.Enqueue(alert);
+                            }
+                            else
+                            {
+                                _activeAlerts.Remove(new Alert(instrument, underlying, row, "ASK", Alert.AlertCondition.LessThan));
+                            }
 
-                        if (!double.IsNaN(bidPrice) && !double.IsNaN(MtMPrice) && bidPrice > MtMPrice)
-                        {
-                            Alert alert = new Alert(instrument, underlying, row, "BID", Alert.AlertCondition.GreaterThan);
-                            if (_activeAlerts.Add(alert))
-                                Alerts.Enqueue(alert);
-                        }
-                        else
-                        {
-                            _activeAlerts.Remove(new Alert(instrument, underlying, row, "BID", Alert.AlertCondition.GreaterThan));
+                            if (!double.IsNaN(bidPrice) && !double.IsNaN(MtMPrice) && bidPrice > MtMPrice)
+                            {
+                                Alert alert = new Alert(instrument, underlying, row, "BID", Alert.AlertCondition.GreaterThan);
+                                if (_activeAlerts.Add(alert))
+                                    Alerts.Enqueue(alert);
+                            }
+                            else
+                            {
+                                _activeAlerts.Remove(new Alert(instrument, underlying, row, "BID", Alert.AlertCondition.GreaterThan));
+                            }
                         }
                     }
                 }
@@ -295,9 +307,40 @@ namespace PricingSheet
             sw.Stop();
         }
 
-        public void LanuchSpeechAlerts()
+        public void LaunchSpeechAlerts()
         {
+            Task.Run(() =>
+            {
+                SpeechAlerts speechAlerts = new SpeechAlerts();
 
+                while (true)
+                {
+                    if (Ribbons.Ribbon.RibbonInstance == null || !Ribbons.Ribbon.RibbonInstance.SpeechAlerts.Checked || !Alerts.TryDequeue(out Alert alert))
+                    {
+                        Thread.Sleep(100);
+                        continue;
+                    }
+
+                    speechAlerts.Speak($"{alert.Field} alert on {alert.Underlying} {alert.Maturity}");
+
+                    lock (_alertsLock)
+                    {
+                        if (_activeAlerts.Contains(alert))
+                            Alerts.Enqueue(alert);
+                    }
+
+                    Thread.Sleep(3500);
+                }
+            });
+        }
+
+        public void ClearAlerts()
+        {
+            lock (_alertsLock)
+            {
+                Alerts = new ConcurrentQueue<Alert>();
+                _activeAlerts.Clear();
+            }
         }
         #endregion
     }

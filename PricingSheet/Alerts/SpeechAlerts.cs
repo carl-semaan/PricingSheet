@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Speech.Synthesis;
 using System.Text;
@@ -14,7 +15,7 @@ namespace PricingSheet.Alerts
         public VoiceGender Gender { get; set; }
         public VoiceAge Age { get; set; }
 
-        public SpeechAlerts(int volume = 100, int rate = -2, VoiceGender gender = VoiceGender.Male, VoiceAge age = VoiceAge.Adult)
+        public SpeechAlerts(int volume = 100, int rate = 0, VoiceGender gender = VoiceGender.Male, VoiceAge age = VoiceAge.Adult)
         {
             Volume = volume > 100 ? 100 : volume < 0 ? 0 : volume;
             Rate = rate > 10 ? 10 : rate < -10 ? -10 : rate;
@@ -34,7 +35,9 @@ namespace PricingSheet.Alerts
                     synthesizer.SelectVoiceByHints(Gender, Age);
                     synthesizer.Volume = Volume;
                     synthesizer.Rate = Rate;
+                    Stopwatch sw = Stopwatch.StartNew();
                     synthesizer.Speak(message);
+                    sw.Stop();
                 }
             });
         }

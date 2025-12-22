@@ -78,9 +78,9 @@ namespace PricingSheet.Ribbons
         {
         }
 
-        private void toggleButton1_Click_1(object sender, RibbonControlEventArgs e)
+        private void ToggleSpeechAlert(object sender, RibbonControlEventArgs e)
         {
-
+            Univ.UnivInstance.ClearAlerts();
         }
 
         private void button6_Click_1(object sender, RibbonControlEventArgs e)
