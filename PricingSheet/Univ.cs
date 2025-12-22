@@ -262,7 +262,7 @@ namespace PricingSheet
         {
             Stopwatch sw = Stopwatch.StartNew();
 
-            if (Ribbons.Ribbon.RibbonInstance == null || !Ribbons.Ribbon.RibbonInstance.SpeechAlerts.Checked)
+            if (Ribbons.Ribbon.RibbonInstance == null || !Ribbons.Ribbon.RibbonInstance.Alerts.Checked)
                 return;
 
             lock (_matrixLock)
@@ -316,17 +316,14 @@ namespace PricingSheet
 
                 while (true)
                 {
-                    if (Ribbons.Ribbon.RibbonInstance == null || !Alerts.TryDequeue(out Alert alert))
+                    if (Ribbons.Ribbon.RibbonInstance == null || !Ribbons.Ribbon.RibbonInstance.Alerts.Checked || !Alerts.TryDequeue(out Alert alert))
                     {
                         Thread.Sleep(100);
                         continue;
                     }
 
-                    if (Ribbons.Ribbon.RibbonInstance.SpeechAlerts.Checked)
-                        speechAlerts.Speak(alert.ToString());
-
-                    if (Ribbons.Ribbon.RibbonInstance.EmailAlerts.Checked)
-                        Task.Run(() => Mailer.SendMailHtml(alert.ToString(), "", alert.ToString(), Constants.Emails));
+                    speechAlerts.Speak(alert.ToString());
+                    Task.Run(() => Mailer.SendMailHtml(alert.ToString(), "", alert.ToString(), Constants.Emails));
 
                     lock (_alertsLock)
                     {
