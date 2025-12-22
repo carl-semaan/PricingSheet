@@ -1,4 +1,8 @@
-﻿using Microsoft.VisualStudio.Tools.Applications.Runtime;
+﻿using Bloomberglp.Blpapi;
+using DocumentFormat.OpenXml.Vml.Office;
+using Microsoft.VisualStudio.Tools.Applications.Runtime;
+using PricingSheet.Models;
+using PricingSheet.Readers;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,9 +16,6 @@ using static PricingSheet.Flux;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using ExcelVSTO = Microsoft.Office.Tools.Excel;
 using Office = Microsoft.Office.Core;
-using PricingSheet.Models;
-using PricingSheet.Readers;
-using DocumentFormat.OpenXml.Vml.Office;
 
 namespace PricingSheet
 {
@@ -321,6 +322,7 @@ namespace PricingSheet
                 {
                     // Clear the sheet if no maturities are selected
                     SheetDisplay.RunDisplay();
+                    Ribbons.Ribbon.RibbonInstance?.SetActiveSubscription(0);
                     return;
                 }
             }
