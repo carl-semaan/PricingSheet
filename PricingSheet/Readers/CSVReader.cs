@@ -122,6 +122,15 @@ namespace PricingSheet.Readers
             Date = date;
             Maturities = new Dictionary<string, double>();
         }
+
+        public CSVTicker Clone()
+        {
+            return new CSVTicker
+            {
+                Ticker = this.Ticker,
+                Maturities = new Dictionary<string, double>(this.Maturities)
+            };
+        }
     }
 
 }

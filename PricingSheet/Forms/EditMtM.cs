@@ -19,7 +19,10 @@ namespace PricingSheet.Forms
         public List<Maturities> Maturities { get; set; }
         public List<CSVTicker> CSVTickers { get; set; }
 
+        private List<CSVTicker> OriginalCopy;
         private List<CSVTicker> EditedTickers = new List<CSVTicker>();
+        private DataTable Table;
+        private BindingSource BindingSource;
 
         public EditMtM(List<Instruments> instruments, List<Maturities> maturities, List<CSVTicker> csvTickers)
         {
@@ -28,14 +31,22 @@ namespace PricingSheet.Forms
 
             Instruments = instruments;
             Maturities = maturities;
-            CSVTickers = csvTickers;
+            CSVTickers = csvTickers.OrderBy(x => x.Ticker).ToList();
+            OriginalCopy = CSVTickers.Select(x => x.Clone()).ToList();
 
             Task.Run(() =>
             {
-                var table = GetDataTable();
-                dataGridView1.Invoke(new Action(() => dataGridView1.DataSource = table));
+                Table = GetDataTable();
+                BindingSource = new BindingSource();
+                BindingSource.DataSource = Table;
+
+                dataGridView1.Invoke(new Action(() =>
+                {
+                    dataGridView1.DataSource = BindingSource;
+                    dataGridView1.Columns["Ticker"].ReadOnly = true;
+                }));
             });
-            
+
         }
 
         public void GotFocus(object sender, EventArgs e)
@@ -58,11 +69,17 @@ namespace PricingSheet.Forms
 
         private void Save_Click(object sender, EventArgs e)
         {
+            MtM.MtMInstance.RefreshSheet(CSVTickers);
+            Univ.UnivInstance.UpdateFairValues(EditedTickers);
+            EditedTickers.Clear();
             this.Close();
         }
 
         private void Cancel_Click(object sender, EventArgs e)
         {
+            EditedTickers.Clear();
+            CSVTickers.Clear();
+            CSVTickers.AddRange(OriginalCopy.Select(x => x.Clone()));
             this.Close();
         }
 
@@ -117,10 +134,21 @@ namespace PricingSheet.Forms
             // Update the dictionary
             original.Maturities[columnName] = value;
 
-            // Optionally, add to EditedTickers if not already added
+            // Add to EditedTickers if not already added
             if (!EditedTickers.Any(t => t.Ticker == tickerName))
                 EditedTickers.Add(original);
         }
 
+        private void SearchBox_TextChanged(object sender, EventArgs e)
+        {
+            if (BindingSource == null) return;
+
+            string filterText = SearchBox.Text.Replace("'", "''");
+
+            if (string.IsNullOrWhiteSpace(filterText) || filterText == "Search...")
+                BindingSource.RemoveFilter();
+            else
+                BindingSource.Filter = $"Ticker LIKE '%{filterText}%'";
+        }
     }
 }

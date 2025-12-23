@@ -252,8 +252,31 @@ namespace PricingSheet
             Grid.Blocks.ForEach(x => x.DirtyFlag = true);
 
             // Clear the alerts
-            Alerts = new ConcurrentQueue<Alert>();
-            _activeAlerts.Clear();
+            ClearAlerts();
+        }
+
+        public void UpdateFairValues(List<CSVTicker> editedValues)
+        {
+            foreach (CSVTicker value in editedValues)
+            {
+                BlockData block = Grid.GridMap[value.Ticker];
+
+                foreach (var maturity in value.Maturities)
+                {
+                    string maturityKey = $"{maturity.Key[0]}{maturity.Key[2]}";
+                    try
+                    {
+                        if (block.HasValue(maturityKey, "MtM"))
+                        {
+                            block.UpdateMatrix(maturityKey, "MtM", maturity.Value);
+                        }
+                    }
+                    catch { }
+                }
+                block.DirtyFlag = true;
+            }
+
+            ClearAlerts();
         }
         #endregion
 

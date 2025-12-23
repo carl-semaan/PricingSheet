@@ -86,8 +86,9 @@ namespace PricingSheet.Ribbons
 
         private void button6_Click_2(object sender, RibbonControlEventArgs e)
         {
+            MtM.MtMInstance.FilesLoaded.Wait();
 
-            using (EditMtM editMtM = new EditMtM(MtM.MtMInstance.MtMSheetUniverse.Instruments, MtM.MtMInstance.MtMSheetUniverse.Maturities, MtM.MtMInstance.CSVdata))
+            using (EditMtM editMtM = new EditMtM(MtM.MtMInstance.MtMSheetUniverse.Instruments, MtM.MtMInstance.MtMSheetUniverse.Maturities, MtM.MtMInstance.CSVdata.Select(x => x.Clone()).ToList()))
             {
                 editMtM.ShowDialog();
             }

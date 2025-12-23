@@ -53,14 +53,15 @@ namespace PricingSheet.Forms
             // 
             // SearchBox
             // 
+            this.SearchBox.ForeColor = System.Drawing.Color.Gray;
             this.SearchBox.Location = new System.Drawing.Point(12, 12);
             this.SearchBox.Name = "SearchBox";
             this.SearchBox.Size = new System.Drawing.Size(214, 20);
             this.SearchBox.TabIndex = 0;
+            this.SearchBox.Text = "Search...";
             this.SearchBox.GotFocus += new System.EventHandler(this.GotFocus);
             this.SearchBox.LostFocus += new System.EventHandler(this.LostFocus);
-            this.SearchBox.Text = "Search...";
-            this.SearchBox.ForeColor = System.Drawing.Color.Gray;
+            this.SearchBox.TextChanged += SearchBox_TextChanged;
             // 
             // dataGridView1
             // 
@@ -68,10 +69,11 @@ namespace PricingSheet.Forms
             this.dataGridView1.AllowUserToDeleteRows = false;
             this.dataGridView1.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView1.EditMode = System.Windows.Forms.DataGridViewEditMode.EditOnEnter;
             this.dataGridView1.Location = new System.Drawing.Point(12, 38);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridView1.Size = new System.Drawing.Size(692, 220);
+            this.dataGridView1.Size = new System.Drawing.Size(827, 220);
             this.dataGridView1.TabIndex = 1;
             this.dataGridView1.ReadOnly = false;
             dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
@@ -79,7 +81,7 @@ namespace PricingSheet.Forms
             // 
             // Save
             // 
-            this.Save.Location = new System.Drawing.Point(596, 264);
+            this.Save.Location = new System.Drawing.Point(731, 264);
             this.Save.Name = "Save";
             this.Save.Size = new System.Drawing.Size(108, 27);
             this.Save.TabIndex = 2;
@@ -89,7 +91,7 @@ namespace PricingSheet.Forms
             // 
             // Cancel
             // 
-            this.Cancel.Location = new System.Drawing.Point(482, 264);
+            this.Cancel.Location = new System.Drawing.Point(617, 264);
             this.Cancel.Name = "Cancel";
             this.Cancel.Size = new System.Drawing.Size(108, 27);
             this.Cancel.TabIndex = 3;
@@ -101,13 +103,13 @@ namespace PricingSheet.Forms
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(716, 303);
+            this.ClientSize = new System.Drawing.Size(851, 303);
             this.Controls.Add(this.Cancel);
             this.Controls.Add(this.Save);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.SearchBox);
             this.Name = "EditMtM";
-            this.Text = "Form1";
+            this.Text = "Edit Fair Values";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

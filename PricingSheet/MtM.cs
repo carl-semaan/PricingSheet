@@ -181,6 +181,13 @@ namespace PricingSheet
             CSVdata = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
             sw.Stop();
 
+            DisplayFairValues();
+
+            SignalFilesLoaded();
+        }
+
+        private void DisplayFairValues()
+        {
             if (CSVdata.Any())
             {
                 lock (_matrixLock)
@@ -199,8 +206,6 @@ namespace PricingSheet
             }
             else
                 Ribbons.Ribbon.RibbonInstance?.SetStatus(dbStatus: "Failed");
-
-            SignalFilesLoaded();
         }
 
         public void SignalFilesLoaded()
@@ -306,6 +311,12 @@ namespace PricingSheet
                 await LoadAndDisplay(csvReader);
                 LoadAndDisplay(jsonReader);
             });
+        }
+
+        public async void RefreshSheet(List<CSVTicker> newTickers)
+        {
+            CSVdata = newTickers;
+            DisplayFairValues();
         }
         #endregion
     }
