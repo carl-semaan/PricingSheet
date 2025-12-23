@@ -1,4 +1,6 @@
-﻿namespace PricingSheet.Forms
+﻿using System.Windows.Forms;
+
+namespace PricingSheet.Forms
 {
     partial class EditMtM
     {
@@ -72,6 +74,8 @@
             this.dataGridView1.Size = new System.Drawing.Size(692, 220);
             this.dataGridView1.TabIndex = 1;
             this.dataGridView1.ReadOnly = false;
+            dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
+            dataGridView1.EditMode = DataGridViewEditMode.EditOnEnter;
             // 
             // Save
             // 
