@@ -269,7 +269,7 @@ namespace PricingSheet.Bloomberg
             JSONReader jsonReader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
 
             var instruments = jsonReader.LoadClass<Instruments>(nameof(Instruments));
-            var maturities = jsonReader.LoadClass<Maturities>(nameof(Maturities)).Where(x => x.Flux).ToList();
+            var maturities = jsonReader.LoadClass<Maturities>(nameof(Maturities));
             var fields = jsonReader.LoadClass<Fields>(nameof(Fields));
             var lastPriceLoads = jsonReader.LoadClass<LastPriceLoad>(nameof(LastPriceLoad));
             var underlyingSpots = jsonReader.LoadClass<UnderlyingSpot>(nameof(UnderlyingSpot));
