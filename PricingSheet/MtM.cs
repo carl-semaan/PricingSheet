@@ -31,8 +31,9 @@ namespace PricingSheet
         public static MtM MtMInstance { get; private set; }
         public Task FilesLoaded => _filesLoadedTcs.Task;
         public BlockData InstrumentDisplayBlock;
+        public SheetUniverse MtMSheetUniverse = new SheetUniverse();
+        public List<CSVTicker> CSVdata;
 
-        private SheetUniverse MtMSheetUniverse = new SheetUniverse();
         private SheetDisplay SheetDisplay;
         private TaskCompletionSource<bool> _filesLoadedTcs = new TaskCompletionSource<bool>();
 
@@ -177,14 +178,14 @@ namespace PricingSheet
         {
             Ribbons.Ribbon.RibbonInstance?.SetStatus(dbStatus: "Loading...");
             Stopwatch sw = Stopwatch.StartNew();
-            List<CSVTicker> data = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
+            CSVdata = await reader.LoadAllTickersAsync(MtMSheetUniverse.Instruments.Select(x => x.Ticker));
             sw.Stop();
 
-            if (data.Any())
+            if (CSVdata.Any())
             {
                 lock (_matrixLock)
                 {
-                    foreach (var tickerData in data)
+                    foreach (var tickerData in CSVdata)
                     {
                         InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, "Last Update", tickerData.Date);
                         foreach (var mat in tickerData.Maturities)

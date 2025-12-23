@@ -47,6 +47,7 @@ namespace PricingSheet.Ribbons
             this.button4 = this.Factory.CreateRibbonButton();
             this.group3 = this.Factory.CreateRibbonGroup();
             this.Refresh = this.Factory.CreateRibbonButton();
+            this.EditMtM = this.Factory.CreateRibbonButton();
             this.Status = this.Factory.CreateRibbonGroup();
             this.label1 = this.Factory.CreateRibbonLabel();
             this.label2 = this.Factory.CreateRibbonLabel();
@@ -128,6 +129,7 @@ namespace PricingSheet.Ribbons
             // group3
             // 
             this.group3.Items.Add(this.Refresh);
+            this.group3.Items.Add(this.EditMtM);
             this.group3.Label = "MtM Sheet";
             this.group3.Name = "group3";
             // 
@@ -139,6 +141,15 @@ namespace PricingSheet.Ribbons
             this.Refresh.Name = "Refresh";
             this.Refresh.ShowImage = true;
             this.Refresh.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button5_Click);
+            // 
+            // EditMtM
+            // 
+            this.EditMtM.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.EditMtM.Image = ((System.Drawing.Image)(resources.GetObject("EditMtM.Image")));
+            this.EditMtM.Label = "Edit";
+            this.EditMtM.Name = "EditMtM";
+            this.EditMtM.ShowImage = true;
+            this.EditMtM.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button6_Click_2);
             // 
             // Status
             // 
@@ -271,6 +282,7 @@ namespace PricingSheet.Ribbons
         internal RibbonButton ActiveSubs;
         internal RibbonGroup Notifications;
         internal RibbonToggleButton Alerts;
+        internal RibbonButton EditMtM;
     }
 
     partial class ThisRibbonCollection

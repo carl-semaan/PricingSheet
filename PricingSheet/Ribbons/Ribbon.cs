@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using PricingSheet.Readers;
 using PricingSheet.Alerts;
+using PricingSheet.Forms;
 
 namespace PricingSheet.Ribbons
 {
@@ -58,7 +59,7 @@ namespace PricingSheet.Ribbons
 
         private void button5_Click_1(object sender, RibbonControlEventArgs e)
         {
-            using (Forms.ManageSubs manageSubs = new Forms.ManageSubs())
+            using (ManageSubs manageSubs = new ManageSubs())
             {
                 manageSubs.ShowDialog();
             }
@@ -83,10 +84,13 @@ namespace PricingSheet.Ribbons
             Univ.UnivInstance.ClearAlerts();
         }
 
-        private void button6_Click_1(object sender, RibbonControlEventArgs e)
+        private void button6_Click_2(object sender, RibbonControlEventArgs e)
         {
-            SpeechAlerts alert = new SpeechAlerts();
-            alert.Speak("Bid alert on V2VD Z5");
+
+            using (EditMtM editMtM = new EditMtM(MtM.MtMInstance.MtMSheetUniverse.Instruments, MtM.MtMInstance.MtMSheetUniverse.Maturities, MtM.MtMInstance.CSVdata))
+            {
+                editMtM.ShowDialog();
+            }
         }
     }
 }
