@@ -236,8 +236,8 @@ namespace PricingSheet
                             if (res.Value == null)
                                 continue;
 
-                            pivotMaturity = Convert.ToDouble(InstrumentDisplayBlock.GetValue(instr.Ticker, yieldMaturity));
                             InstrumentDisplayBlock.UpdateMatrix(instr.Ticker, "Spot", res.Value);
+                            pivotMaturity = Convert.ToDouble(InstrumentDisplayBlock.GetValue(instr.Ticker, yieldMaturity));
                             InstrumentDisplayBlock.UpdateMatrix(instr.Ticker, "Yield", $"{(pivotMaturity / res.Value) * 100}%");
                         }
                         else
