@@ -49,7 +49,7 @@ namespace PricingSheet.Bloomberg
 
                     Request request = reDataService.CreateRequest("ReferenceDataRequest");
 
-                    foreach (var instr in Instruments)
+                    foreach (var instr in Instruments.Where(x => !string.IsNullOrEmpty(x)))
                     {
                         try
                         {
@@ -162,7 +162,7 @@ namespace PricingSheet.Bloomberg
 
                     Request request = reDataService.CreateRequest("ReferenceDataRequest");
 
-                    foreach (var instr in Instruments)
+                    foreach (var instr in Instruments.Where(x => !string.IsNullOrEmpty(x)))
                     {
                         request.Append("securities", instr);
                     }
@@ -263,7 +263,7 @@ namespace PricingSheet.Bloomberg
         #endregion
 
         #region Data Validation
-        public void ValidateData()
+        public static void ValidateData()
         {
             // Read the current data
             JSONReader jsonReader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
@@ -277,11 +277,19 @@ namespace PricingSheet.Bloomberg
             // Validate the underlyings short name
             BloombergDataRequest underlyingNamesReq = new BloombergDataRequest(
                 null,
-                instruments.Select(x => x.Underlying).ToList(),
+                instruments.Select(x => x.Underlying).Distinct().ToList(),
                 new List<string> { "SHORT_NAME" }
                 );
 
-            List<InstrumentResponse> underlyingNames = FetchInstrument().Result;
+            List<InstrumentResponse> underlyingNames = underlyingNamesReq.FetchInstrument().Result;
+            foreach (var instrument in instruments)
+            {
+                instrument.ShortName = underlyingNames.Where(x => x.Ticker == instrument.Underlying).Select(x => x.ShortName).FirstOrDefault();
+            }
+
+            // Save to json file
+            JSONContent content = new JSONContent(instruments, maturities, fields, lastPriceLoads, underlyingSpots);
+            jsonReader.SaveJSON(content);
         }
         #endregion
     }
