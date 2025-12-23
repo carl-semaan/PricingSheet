@@ -17,7 +17,7 @@ namespace PricingSheet.Models
         public string ICBSuperSectorName { get; set; }
 
         public Instruments() { }
-        public Instruments(string ticker, string underlying, string shortName, string exchangeCode, string instrumentType, string currency)
+        public Instruments(string ticker, string underlying, string shortName, string exchangeCode, string instrumentType, string currency, string ICBSupersectorName)
         {
             Ticker = ticker;
             Underlying = underlying;
@@ -25,6 +25,7 @@ namespace PricingSheet.Models
             ExchangeCode = exchangeCode;
             InstrumentType = instrumentType;
             Currency = currency;
+            this.ICBSuperSectorName = ICBSupersectorName;
         }
     }
 }
