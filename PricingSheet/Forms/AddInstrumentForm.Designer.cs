@@ -195,7 +195,7 @@ namespace PricingSheet.Forms
                 return;
             }
 
-            Instruments newInstrument = new Instruments(TickerName.ToUpper(), Underlying.ToUpper(), ShortName.ToUpper(), ExchangeCode.ToUpper(), "Equity",CurrencyISO.ToUpper(), "");
+            Instruments newInstrument = new Instruments(TickerName.ToUpper(), Underlying.ToUpper(), ShortName.ToUpper(), ExchangeCode.ToUpper(), "Equity",CurrencyISO.ToUpper(), "", "");
 
             var flux = Flux.FluxInstance;
             flux.UpdateDisplay(newInstrument);

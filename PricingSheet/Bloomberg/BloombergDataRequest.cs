@@ -1,17 +1,19 @@
 ﻿using Bloomberglp.Blpapi;
+using Newtonsoft.Json;
 using PricingSheet.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using PricingSheet.Readers;
 
 namespace PricingSheet.Bloomberg
 {
     public class BloombergDataRequest
     {
         public List<string> Instruments { get; set; }
-        public List<string >Fields { get; set; }
+        public List<string> Fields { get; set; }
         public MtM _MtM { get; set; }
 
 
@@ -59,7 +61,7 @@ namespace PricingSheet.Bloomberg
                         }
                     }
 
-                    foreach(var field in Fields)
+                    foreach (var field in Fields)
                         request.Append("fields", field);
 
                     session.SendRequest(request, null);
@@ -223,7 +225,7 @@ namespace PricingSheet.Bloomberg
                     {
                         Element fieldData = secData.GetElement("fieldData");
 
-                        foreach(var field in fields)
+                        foreach (var field in fields)
                         {
                             if (fieldData.HasElement(field))
                             {
@@ -238,9 +240,6 @@ namespace PricingSheet.Bloomberg
                                         break;
                                     case "EXCH_CODE":
                                         response.ExchangeCode = value;
-                                        break;
-                                    case "SECURITY_TYP":
-                                        response.InstrumentType = value;
                                         break;
                                     case "CRNCY":
                                         response.Currency = value;
@@ -262,6 +261,29 @@ namespace PricingSheet.Bloomberg
             }
         }
         #endregion
+
+        #region Data Validation
+        public void ValidateData()
+        {
+            // Read the current data
+            JSONReader jsonReader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
+
+            var instruments = jsonReader.LoadClass<Instruments>(nameof(Instruments));
+            var maturities = jsonReader.LoadClass<Maturities>(nameof(Maturities)).Where(x => x.Flux).ToList();
+            var fields = jsonReader.LoadClass<Fields>(nameof(Fields));
+            var lastPriceLoads = jsonReader.LoadClass<LastPriceLoad>(nameof(LastPriceLoad));
+            var underlyingSpots = jsonReader.LoadClass<UnderlyingSpot>(nameof(UnderlyingSpot));
+
+            // Validate the underlyings short name
+            BloombergDataRequest underlyingNamesReq = new BloombergDataRequest(
+                null,
+                instruments.Select(x => x.Underlying).ToList(),
+                new List<string> { "SHORT_NAME" }
+                );
+
+            List<InstrumentResponse> underlyingNames = FetchInstrument().Result;
+        }
+        #endregion
     }
 
     public class UnderlyingSpotResponse : UnderlyingSpot
@@ -279,8 +301,8 @@ namespace PricingSheet.Bloomberg
     {
         public string Error { get; set; }
         public InstrumentResponse() { }
-        public InstrumentResponse(string ticker, string underlying, string shortName, string exchangeCode, string instrumentType, string currency, string ICBSupersectorName, string error)
-            : base(ticker, underlying, shortName, exchangeCode, instrumentType, currency, ICBSupersectorName)
+        public InstrumentResponse(string ticker, string underlying, string shortName, string exchangeCode, string instrumentType, string currency, string ICBSupersectorName, string exchange, string error)
+            : base(ticker, underlying, shortName, exchangeCode, instrumentType, currency, ICBSupersectorName, exchange)
         {
             Error = error;
         }
