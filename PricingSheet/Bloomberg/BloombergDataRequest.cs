@@ -230,22 +230,22 @@ namespace PricingSheet.Bloomberg
                                 string value = fieldData.GetElementAsString(field);
                                 switch (field)
                                 {
-                                    case "UNDERLYING":
+                                    case "OPT_UNDL_TICKER":
                                         response.Underlying = value;
                                         break;
                                     case "SHORT_NAME":
                                         response.ShortName = value;
                                         break;
-                                    case "EXCHANGE_CODE":
+                                    case "EXCH_CODE":
                                         response.ExchangeCode = value;
                                         break;
-                                    case "INSTRUMENT_TYPE":
+                                    case "SECURITY_TYP":
                                         response.InstrumentType = value;
                                         break;
                                     case "CRNCY":
                                         response.Currency = value;
                                         break;
-                                    case "ICB_SUPER_SECTOR_NAME":
+                                    case "ICB_SUPERSECTOR_NAME":
                                         response.ICBSuperSectorName = value;
                                         break;
                                 }
