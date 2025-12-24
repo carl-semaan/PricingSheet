@@ -76,8 +76,10 @@ namespace PricingSheet.Forms
             this.dataGridView1.Size = new System.Drawing.Size(827, 220);
             this.dataGridView1.TabIndex = 1;
             this.dataGridView1.ReadOnly = false;
-            dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
-            dataGridView1.EditMode = DataGridViewEditMode.EditOnEnter;
+            this.dataGridView1.CellValueChanged += dataGridView1_CellValueChanged;
+            this.dataGridView1.EditMode = DataGridViewEditMode.EditOnEnter;
+            this.dataGridView1.RowHeadersVisible = false;
+            this.dataGridView1.SelectionMode = DataGridViewSelectionMode.CellSelect;
             // 
             // Save
             // 
