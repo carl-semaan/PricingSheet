@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PricingSheet.Models;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -103,6 +104,55 @@ namespace PricingSheet.Readers
                 return tickerData;
             }
         }
+
+        public void SaveTickerData(List<CSVTicker> newValues)
+        {
+            foreach (var ticker in newValues)
+            {
+                try
+                {
+                    string fullPath = Path.Combine(FilePath, $"{ticker.Ticker.ToUpper()}.csv");
+
+                    Instruments targetInstrument = MtM.MtMInstance.MtMSheetUniverse.Instruments.First(x => x.Ticker == ticker.Ticker);
+                    UnderlyingSpot targetSpot = MtM.MtMInstance.SpotData.First(x => x.Key == targetInstrument.Underlying).Value;
+
+                    // Getting the headers
+                    var headerLine = File.ReadLines(fullPath).First();
+                    string[] headers = headerLine.Split(',');
+
+                    // Getting the values and mapping them to the headers in the file
+                    var row = new Dictionary<string, string>
+                    {
+                        [headers[0]] = ticker.Ticker,
+                        [headers[1]] = targetInstrument.Underlying,
+                        [headers[2]] = targetInstrument.Currency,
+                        [headers[3]] = ticker.Date,
+                        [headers[4]] = targetSpot.Value.ToString()
+                    };
+
+                    foreach (var h in headers.Skip(5))
+                    {
+                        row[h] = "-";
+
+                        try
+                        {
+                            if (!double.IsNaN(ticker.Maturities[h]))
+                                row[h] = ticker.Maturities[h].ToString();
+                        }
+                        catch { }
+                    }
+
+                    // Building the line to append and making sure to follow header's order
+                    var csvLine = string.Join(",", headers.Select(h => row.TryGetValue(h, out var v) ? v : ""));
+
+                    using (var sw = new StreamWriter(fullPath, append: true))
+                    {
+                        sw.WriteLine(csvLine);
+                    }
+                }
+                catch { }
+            }
+        }
     }
 
     public class CSVTicker
@@ -128,6 +178,7 @@ namespace PricingSheet.Readers
             return new CSVTicker
             {
                 Ticker = this.Ticker,
+                Date = this.Date,
                 Maturities = new Dictionary<string, double>(this.Maturities)
             };
         }

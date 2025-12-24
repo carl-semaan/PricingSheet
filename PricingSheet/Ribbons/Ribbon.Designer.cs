@@ -224,8 +224,10 @@ namespace PricingSheet.Ribbons
             // Alerts
             // 
             this.Alerts.Checked = true;
+            this.Alerts.Image = ((System.Drawing.Image)(resources.GetObject("Alerts.Image")));
             this.Alerts.Label = "Alerts";
             this.Alerts.Name = "Alerts";
+            this.Alerts.ShowImage = true;
             this.Alerts.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ToggleSpeechAlert);
             // 
             // Ribbon

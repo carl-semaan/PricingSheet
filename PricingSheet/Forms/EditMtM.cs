@@ -69,8 +69,16 @@ namespace PricingSheet.Forms
 
         private void Save_Click(object sender, EventArgs e)
         {
-            MtM.MtMInstance.RefreshSheet(CSVTickers);
-            Univ.UnivInstance.UpdateFairValues(EditedTickers);
+            var editedTickers = EditedTickers.Select(t => t.Clone()).ToList();
+
+            Task.Run(() =>
+            {
+                CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
+                csvReader.SaveTickerData(editedTickers);
+            });
+
+            MtM.MtMInstance.RefreshSheet(editedTickers);
+            Univ.UnivInstance.UpdateFairValues(editedTickers);
             EditedTickers.Clear();
             this.Close();
         }
@@ -133,6 +141,7 @@ namespace PricingSheet.Forms
 
             // Update the dictionary
             original.Maturities[columnName] = value;
+            original.Date = DateTime.Today.ToString("MM/dd/yyyy");
 
             // Add to EditedTickers if not already added
             if (!EditedTickers.Any(t => t.Ticker == tickerName))

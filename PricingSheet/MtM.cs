@@ -33,6 +33,7 @@ namespace PricingSheet
         public BlockData InstrumentDisplayBlock;
         public SheetUniverse MtMSheetUniverse = new SheetUniverse();
         public List<CSVTicker> CSVdata;
+        public Dictionary<string, UnderlyingSpot> SpotData;
 
         private SheetDisplay SheetDisplay;
         private TaskCompletionSource<bool> _filesLoadedTcs = new TaskCompletionSource<bool>();
@@ -224,12 +225,22 @@ namespace PricingSheet
             else
                 rawResponse = LoadSavedPrices(reader);
 
-            var response = rawResponse.ToDictionary(x => x.Underlying, x => x);
-
-            string yieldMaturity = $"Z{DateTime.Now.AddYears(2).Year % 10}";
-            double pivotMaturity;
+            SpotData = rawResponse.ToDictionary(x => x.Underlying, x => x);
 
             await FilesLoaded;
+
+            DisplaySpotAndYield();
+
+            if (SpotData.Any())
+                Ribbons.Ribbon.RibbonInstance?.SetStatus(spotStatus: "Loaded");
+            else
+                Ribbons.Ribbon.RibbonInstance?.SetStatus(spotStatus: "Failed");
+        }
+
+        private void DisplaySpotAndYield()
+        {
+            string yieldMaturity = $"Z{DateTime.Now.AddYears(2).Year % 10}";
+            double pivotMaturity;
 
             lock (_matrixLock)
             {
@@ -237,7 +248,7 @@ namespace PricingSheet
                 {
                     try
                     {
-                        if (response.TryGetValue(instr.Underlying, out var res))
+                        if (SpotData.TryGetValue(instr.Underlying, out var res))
                         {
                             if (res.Value == null)
                                 continue;
@@ -258,11 +269,6 @@ namespace PricingSheet
                 }
                 SheetDisplay.RunBlock();
             }
-
-            if (response.Any())
-                Ribbons.Ribbon.RibbonInstance?.SetStatus(spotStatus: "Loaded");
-            else
-                Ribbons.Ribbon.RibbonInstance?.SetStatus(spotStatus: "Failed");
         }
 
         private async Task<List<UnderlyingSpot>> LoadBloombergPrices(JSONReader reader)
@@ -315,8 +321,26 @@ namespace PricingSheet
 
         public async void RefreshSheet(List<CSVTicker> newTickers)
         {
-            CSVdata = newTickers;
-            DisplayFairValues();
+            string yieldMaturity = $"Z{DateTime.Now.AddYears(2).Year % 100}";
+            bool updateYield = false;
+
+            foreach (var ticker in newTickers)
+            {
+                var target = CSVdata.First(x => x.Ticker == ticker.Ticker);
+
+                if (target.Maturities[yieldMaturity] != ticker.Maturities[yieldMaturity])
+                    updateYield = true;
+
+                target.Maturities = ticker.Maturities;
+                target.Date = ticker.Date;
+            }
+
+            Task.Run(() =>
+            {
+                DisplayFairValues();
+                if (updateYield)
+                    DisplaySpotAndYield();
+            });
         }
         #endregion
     }
