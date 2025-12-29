@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Windows.Forms;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
-using PricingSheet.Models;
-using PricingSheet.Readers;
+using PricingSheetCore.Models;
+using PricingSheetCore.Readers;
 
 namespace PricingSheet.Forms
 {

@@ -1,4 +1,4 @@
-﻿using PricingSheet.Models;
+﻿using PricingSheetCore.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PricingSheet.Readers
+namespace PricingSheetCore.Readers
 {
     public class CSVReader : Reader
     {
@@ -105,7 +105,7 @@ namespace PricingSheet.Readers
             }
         }
 
-        public void SaveTickerData(List<CSVTicker> newValues)
+        public void SaveTickerData(List<CSVTicker> newValues, List<Instruments> MtMInstruments, Dictionary<string, UnderlyingSpot> MtMUnderlyingSpot)
         {
             foreach (var ticker in newValues)
             {
@@ -113,8 +113,8 @@ namespace PricingSheet.Readers
                 {
                     string fullPath = Path.Combine(FilePath, $"{ticker.Ticker.ToUpper()}.csv");
 
-                    Instruments targetInstrument = MtM.MtMInstance.MtMSheetUniverse.Instruments.First(x => x.Ticker == ticker.Ticker);
-                    UnderlyingSpot targetSpot = MtM.MtMInstance.SpotData.First(x => x.Key == targetInstrument.Underlying).Value;
+                    Instruments targetInstrument = MtMInstruments.First(x => x.Ticker == ticker.Ticker);
+                    UnderlyingSpot targetSpot = MtMUnderlyingSpot.First(x => x.Key == targetInstrument.Underlying).Value;
 
                     // Getting the headers
                     var headerLine = File.ReadLines(fullPath).First();

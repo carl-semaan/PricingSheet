@@ -247,18 +247,7 @@
     <Compile Include="Forms\ManageSubs.Designer.cs">
       <DependentUpon>ManageSubs.cs</DependentUpon>
     </Compile>
-    <Compile Include="Models\Alert.cs" />
-    <Compile Include="Models\Fields.cs" />
-    <Compile Include="Models\Instruments.cs" />
-    <Compile Include="Models\LastPriceLoad.cs" />
-    <Compile Include="Models\Maturities.cs" />
-    <Compile Include="Models\SheetUniverse.cs" />
-    <Compile Include="Models\UnderlyingSpot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Readers\CSVReader.cs" />
-    <Compile Include="Readers\ExcelReader.cs" />
-    <Compile Include="Readers\JSONReader.cs" />
-    <Compile Include="Readers\Reader.cs" />
     <Compile Include="Ribbons\Ribbon.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -350,7 +339,12 @@
   <ItemGroup>
     <None Include="Ribbons\Icons\refresh-page-option.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\PricingSheetCore\PricingSheetCore.csproj">
+      <Project>{23c682de-62f5-4fc4-8724-c8a70503c3dd}</Project>
+      <Name>PricingSheetCore</Name>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

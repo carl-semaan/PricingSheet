@@ -1,6 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Bibliography;
-using PricingSheet.Models;
-using PricingSheet.Readers;
+using PricingSheetCore.Models;
+using PricingSheetCore.Readers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -74,7 +74,7 @@ namespace PricingSheet.Forms
             Task.Run(() =>
             {
                 CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
-                csvReader.SaveTickerData(editedTickers);
+                csvReader.SaveTickerData(editedTickers, MtM.MtMInstance.MtMSheetUniverse.Instruments, MtM.MtMInstance.SpotData);
             });
 
             MtM.MtMInstance.RefreshSheet(editedTickers);

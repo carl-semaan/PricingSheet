@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
-using PricingSheet.Readers;
+using PricingSheetCore.Readers;
 using PricingSheet.Alerts;
 using PricingSheet.Forms;
 

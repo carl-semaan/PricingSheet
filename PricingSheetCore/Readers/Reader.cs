@@ -9,16 +9,12 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Management.Instrumentation;
 using System.Reflection;
-using System.Runtime.Remoting.Contexts;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using PricingSheet.Models;
+using PricingSheetCore.Models;
 
-namespace PricingSheet
+namespace PricingSheetCore.Readers
 {
     public class Reader
     {

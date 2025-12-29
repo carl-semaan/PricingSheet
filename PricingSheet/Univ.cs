@@ -2,8 +2,8 @@
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.VisualStudio.Tools.Applications.Runtime;
 using PricingSheet.Alerts;
-using PricingSheet.Models;
-using PricingSheet.Readers;
+using PricingSheetCore.Models;
+using PricingSheetCore.Readers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

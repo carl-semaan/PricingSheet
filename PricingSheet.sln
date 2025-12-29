@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36202.13 d17.14
+VisualStudioVersion = 17.14.36202.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PricingSheet", "PricingSheet\PricingSheet.csproj", "{02968374-4E50-FFB3-25A7-C8AB1B08F734}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PricingSheetCore", "PricingSheetCore\PricingSheetCore.csproj", "{23C682DE-62F5-4FC4-8724-C8A70503C3DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{02968374-4E50-FFB3-25A7-C8AB1B08F734}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02968374-4E50-FFB3-25A7-C8AB1B08F734}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02968374-4E50-FFB3-25A7-C8AB1B08F734}.Release|Any CPU.Build.0 = Release|Any CPU
+		{23C682DE-62F5-4FC4-8724-C8A70503C3DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23C682DE-62F5-4FC4-8724-C8A70503C3DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23C682DE-62F5-4FC4-8724-C8A70503C3DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23C682DE-62F5-4FC4-8724-C8A70503C3DD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using static PricingSheet.Flux;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using ExcelVSTO = Microsoft.Office.Tools.Excel;
-using PricingSheet.Models;
+using PricingSheetCore.Models;
 
 namespace PricingSheet
 {

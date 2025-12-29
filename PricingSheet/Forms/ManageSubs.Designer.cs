@@ -1,5 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Office2010.ExcelAc;
-using PricingSheet.Models;
+using PricingSheetCore.Models;
 using System.Collections.Generic;
 
 namespace PricingSheet.Forms

@@ -1,8 +1,6 @@
 ﻿using Bloomberglp.Blpapi;
 using DocumentFormat.OpenXml.Vml.Office;
 using Microsoft.VisualStudio.Tools.Applications.Runtime;
-using PricingSheet.Models;
-using PricingSheet.Readers;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -16,6 +14,8 @@ using static PricingSheet.Flux;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using ExcelVSTO = Microsoft.Office.Tools.Excel;
 using Office = Microsoft.Office.Core;
+using PricingSheetCore.Models;
+using PricingSheetCore.Readers;
 
 namespace PricingSheet
 {

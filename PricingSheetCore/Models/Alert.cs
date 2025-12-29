@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PricingSheet.Models
+namespace PricingSheetCore.Models
 {
     public sealed class Alert : IEquatable<Alert>
     {

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PricingSheet.Readers
+namespace PricingSheetCore.Readers
 {
     public class ExcelReader : Reader
     {

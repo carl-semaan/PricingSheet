@@ -1,12 +1,12 @@
 ﻿using Bloomberglp.Blpapi;
 using Newtonsoft.Json;
-using PricingSheet.Models;
+using PricingSheetCore.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using PricingSheet.Readers;
+using PricingSheetCore.Readers;
 
 namespace PricingSheet.Bloomberg
 {

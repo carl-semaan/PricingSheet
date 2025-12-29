@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using PricingSheet.Models;
+using PricingSheetCore.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PricingSheet.Readers
+namespace PricingSheetCore.Readers
 {
     public class JSONReader : Reader
     {
