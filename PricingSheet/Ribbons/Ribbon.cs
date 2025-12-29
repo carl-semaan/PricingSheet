@@ -9,6 +9,7 @@ using ExcelInterop = Microsoft.Office.Interop.Excel;
 using PricingSheetCore.Readers;
 using PricingSheet.Alerts;
 using PricingSheet.Forms;
+using static PricingSheetCore.Constants;
 
 namespace PricingSheet.Ribbons
 {
@@ -54,7 +55,7 @@ namespace PricingSheet.Ribbons
 
         public void SetActiveSubscription(int count)
         {
-            ActiveSubs.Label = $"Active Subscriptions: {count}/{Constants.MaxActiveInstruments}";
+            ActiveSubs.Label = $"Active Subscriptions: {count}/{MaxActiveInstruments}";
         }
 
         private void button5_Click_1(object sender, RibbonControlEventArgs e)

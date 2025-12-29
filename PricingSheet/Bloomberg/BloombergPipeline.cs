@@ -14,6 +14,7 @@ using static PricingSheet.Flux;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using ExcelVSTO = Microsoft.Office.Tools.Excel;
 using PricingSheetCore.Models;
+using PricingSheetCore;
 
 namespace PricingSheet
 {
@@ -230,15 +231,6 @@ namespace PricingSheet
                 }
                 Thread.Sleep(Constants.ThreadSleep);
             }
-        }
-
-        private void updateSheet(string instrument, string field, double value)
-        {
-            string[] parts = instrument.Split('=');
-
-            (int row, int col) = Utils.FindCellFlux(parts[1].Split(' ')[0], field, parts[0]);
-
-            SheetDisplay.DisplayCell(Sheet, new DataCell(value.ToString(), IsCentered: true), row, col);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using ExcelInterop = Microsoft.Office.Interop.Excel;
 using PricingSheetCore.Models;
 using PricingSheetCore.Readers;
+using PricingSheetCore;
 
 namespace PricingSheet.Forms
 {

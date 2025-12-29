@@ -16,6 +16,7 @@ using ExcelVSTO = Microsoft.Office.Tools.Excel;
 using Office = Microsoft.Office.Core;
 using PricingSheetCore.Models;
 using PricingSheetCore.Readers;
+using PricingSheetCore;
 
 namespace PricingSheet
 {

@@ -279,7 +279,6 @@
     <Compile Include="ThisWorkbook.Designer.cs">
       <DependentUpon>ThisWorkbook.Designer.xml</DependentUpon>
     </Compile>
-    <Compile Include="Utils.cs" />
     <EmbeddedResource Include="Forms\AddInstrumentForm.resx">
       <DependentUpon>AddInstrumentForm.cs</DependentUpon>
     </EmbeddedResource>

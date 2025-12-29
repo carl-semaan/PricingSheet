@@ -23,6 +23,7 @@ using Office = Microsoft.Office.Core;
 using PricingSheetCore.Models;
 using PricingSheetCore.Readers;
 using PricingSheet.Bloomberg;
+using static PricingSheetCore.Constants;
 
 namespace PricingSheet
 {
@@ -85,7 +86,7 @@ namespace PricingSheet
             List<RowData> rowData = new List<RowData>();
             List<ColumnData> columnData = new List<ColumnData>();
 
-            JSONReader jsonReader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
+            JSONReader jsonReader = new JSONReader(PricingSheetFolderPath, JSONFileName);
 
             MtMSheetUniverse.Instruments = jsonReader.LoadClass<Instruments>(nameof(Instruments));
             MtMSheetUniverse.Maturities = jsonReader.LoadClass<Maturities>(nameof(Maturities));
@@ -120,7 +121,7 @@ namespace PricingSheet
             InstrumentDisplayBlock = new BlockData(StartRow: 2, StartColumn: 4, MtMSheetUniverse.Instruments.Select(i => i.Ticker).ToList(), headers.Skip(3).Take(headers.Count - 4).Select(x => x.Value).ToList());
 
             // Fetch Tickers Data
-            CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
+            CSVReader csvReader = new CSVReader(TickersDBFolderPath);
             Task.Run(() => LoadAndDisplay(csvReader));
 
             // Fetch Spot values for underlying and calculate yield
@@ -310,8 +311,8 @@ namespace PricingSheet
             SheetDisplay.RunBlock();
 
             // Fetch Tickers Data
-            CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
-            JSONReader jsonReader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
+            CSVReader csvReader = new CSVReader(TickersDBFolderPath);
+            JSONReader jsonReader = new JSONReader(PricingSheetFolderPath, JSONFileName);
             Task.Run(async () =>
             {
                 await LoadAndDisplay(csvReader);
