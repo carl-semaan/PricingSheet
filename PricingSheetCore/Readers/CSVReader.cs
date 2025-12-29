@@ -1,4 +1,6 @@
-﻿using PricingSheetCore.Models;
+﻿using CsvHelper;
+using CsvHelper.Configuration;
+using PricingSheetCore.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,12 +15,14 @@ namespace PricingSheetCore.Readers
 {
     public class CSVReader : Reader
     {
+        public string Delimiter { get; set; } = ",";
         public CSVReader() { }
 
-        public CSVReader(string filePath, string fileName = "")
+        public CSVReader(string filePath, string fileName = "", string Delimiter = ",")
         {
             this.FilePath = filePath;
             this.FileName = fileName;
+            this.Delimiter = Delimiter;
         }
         /// <summary>
         /// High performance loading of multiple tickers from CSV files in parallel with least resource usage
@@ -152,6 +156,25 @@ namespace PricingSheetCore.Readers
                 }
                 catch { }
             }
+        }
+
+        public List<T> LoadClass<T>()
+        {
+            string fullPath = Path.Combine(FilePath, FileName);
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                HasHeaderRecord = true,
+                Delimiter = this.Delimiter,
+            };
+
+            using var reader = new StreamReader(fullPath);
+            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+
+            csv.Context.Configuration.HeaderValidated = null;
+            csv.Context.Configuration.MissingFieldFound = null;
+
+            return csv.GetRecords<T>().ToList();
         }
     }
 

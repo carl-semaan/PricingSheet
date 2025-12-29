@@ -21,5 +21,9 @@ namespace PricingSheetCore
         public static List<string> Emails = new List<string> { "carl.semaan@melanion.com" };
         // tony.khreich@melanion.com
         // roland.nasr@melanion.com
+
+        public const string EurexURL = @"https://www.eurex.com/ex-en/markets/productSearch";
+        public const string EuronextURL = @"https://live.euronext.com/en/markets/paris/dividend-derivatives/list";
+        public const int MaxAttempts = 5;
     }
 }

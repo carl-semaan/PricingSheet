@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PricingSheet", "PricingShee
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PricingSheetCore", "PricingSheetCore\PricingSheetCore.csproj", "{23C682DE-62F5-4FC4-8724-C8A70503C3DD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PricingSheetDataManager", "PricingSheetDataManager\PricingSheetDataManager.csproj", "{236E5F40-E3B9-4B7B-B8F1-D0AC19A0691A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{23C682DE-62F5-4FC4-8724-C8A70503C3DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{23C682DE-62F5-4FC4-8724-C8A70503C3DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{23C682DE-62F5-4FC4-8724-C8A70503C3DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{236E5F40-E3B9-4B7B-B8F1-D0AC19A0691A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{236E5F40-E3B9-4B7B-B8F1-D0AC19A0691A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{236E5F40-E3B9-4B7B-B8F1-D0AC19A0691A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{236E5F40-E3B9-4B7B-B8F1-D0AC19A0691A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
