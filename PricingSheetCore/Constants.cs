@@ -25,5 +25,6 @@ namespace PricingSheetCore
         public const string EurexURL = @"https://www.eurex.com/ex-en/markets/productSearch";
         public const string EuronextURL = @"https://live.euronext.com/en/markets/paris/dividend-derivatives/list";
         public const int MaxAttempts = 5;
+        public const int ScraperTimeoutMS = 120000;
     }
 }

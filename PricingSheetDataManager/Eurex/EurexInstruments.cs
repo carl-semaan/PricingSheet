@@ -9,22 +9,25 @@ namespace PricingSheetDataManager.Eurex
 {
     public class EurexInstruments
     {
+        [Name("PRODUCT_ID")]
         public string ProductID { get; set; }
+
+        [Name("PRODUCT_NAME")]
         public string Product { get; set; }
 
-        [Name("Product Group")]
+        [Name("PRODUCT_GROUP")]
         public string ProductGroup {  get; set; }
+
+        [Name("CURRENCY")]
         public string Currency { get; set; }
 
-        [Name("Product ISIN")]
+        [Name("PRODUCT_ISIN")]
         public string ProductISIN { get; set; }
 
-        [Name("Underlying ISIN")]
+        [Name("UNDERLYING_ISIN")]
         public string UnderlyingISIN { get; set; }
 
-        [Name("Share ISIN")]
+        [Name("SHARE_ISIN")]
         public string ShareISIN { get; set; }
-
-
     }
 }

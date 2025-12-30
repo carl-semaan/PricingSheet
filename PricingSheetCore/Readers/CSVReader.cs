@@ -15,14 +15,16 @@ namespace PricingSheetCore.Readers
 {
     public class CSVReader : Reader
     {
-        public string Delimiter { get; set; } = ",";
+        public string Delimiter { get; set; }
+        public bool SkipFirstRow { get; set; }
         public CSVReader() { }
 
-        public CSVReader(string filePath, string fileName = "", string Delimiter = ",")
+        public CSVReader(string filePath, string fileName = "", string Delimiter = ",", bool SkipFirstRow = false)
         {
             this.FilePath = filePath;
             this.FileName = fileName;
             this.Delimiter = Delimiter;
+            this.SkipFirstRow = SkipFirstRow;
         }
         /// <summary>
         /// High performance loading of multiple tickers from CSV files in parallel with least resource usage
@@ -169,10 +171,15 @@ namespace PricingSheetCore.Readers
             };
 
             using var reader = new StreamReader(fullPath);
-            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            using var csv = new CsvReader(reader, config);
 
             csv.Context.Configuration.HeaderValidated = null;
             csv.Context.Configuration.MissingFieldFound = null;
+
+            if (SkipFirstRow)
+            {
+                csv.Read();
+            }
 
             return csv.GetRecords<T>().ToList();
         }
