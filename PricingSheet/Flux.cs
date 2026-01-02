@@ -209,7 +209,7 @@ namespace PricingSheet
                 FluxSheetUniverse.Fields.Select(x => x.Field).ToList()
             );
 
-            Task.Run(() => pipeline.Launch(BloombegCts.Token));
+            Task.Run(() => pipeline.LaunchOfflineTest(BloombegCts.Token));
         }
         #endregion
 
