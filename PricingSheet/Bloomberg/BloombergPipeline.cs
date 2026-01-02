@@ -194,7 +194,7 @@ namespace PricingSheet
             {
                 foreach (var maturity in MaturityCodes)
                 {
-                    instr = $"{instrument.Ticker}={maturity} {instrument.ExchangeCode} {instrument.InstrumentType}";
+                    instr = $"{instrument.Ticker}={string.Concat(maturity[0], maturity[2])} {instrument.ExchangeCode} {instrument.InstrumentType}";
                     subscriptions.Add(new Subscription(instr, Fields, new CorrelationID(instr)));
                 }
             }

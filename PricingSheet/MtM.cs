@@ -199,7 +199,7 @@ namespace PricingSheet
                         InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, "Last Update", tickerData.Date);
                         foreach (var mat in tickerData.Maturities)
                         {
-                            InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, string.Concat(mat.Key[0], mat.Key[2]), mat.Value);
+                            InstrumentDisplayBlock.UpdateMatrix(tickerData.Ticker, mat.Key, mat.Value);
                         }
                     }
                     SheetDisplay.RunBlock();

@@ -61,7 +61,7 @@ namespace PricingSheetCore.Models
 
         public override string ToString()
         {
-            return $"{Field} alert on {ShortName} {Maturity}";
+            return $"{Field} alert on {ShortName} {string.Concat(Maturity[0], Maturity[2])}";
         }
 
         public enum AlertCondition
