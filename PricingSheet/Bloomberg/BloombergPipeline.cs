@@ -220,7 +220,7 @@ namespace PricingSheet
                 {
                     foreach (var maturity in MaturityCodes)
                     {
-                        string instr = $"{instrument.Ticker}={maturity} {instrument.ExchangeCode} {instrument.InstrumentType}";
+                        string instr = $"{instrument.Ticker}={string.Concat(maturity[0], maturity[2])} {instrument.ExchangeCode} {instrument.InstrumentType}";
                         foreach (var field in Fields)
                         {
                             double value = Math.Round(rand.NextDouble() * 100, 2);
