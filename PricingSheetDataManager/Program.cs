@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using PricingSheetCore;
 using DocumentFormat.OpenXml.Wordprocessing;
+using PricingSheetCore.Readers;
 
 namespace PricingSheetDataManager
 {
@@ -13,6 +14,8 @@ namespace PricingSheetDataManager
     {
         public static async Task Main(string[] args)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             // Fetching the live instruments from the exchanges
             Stopwatch sw = Stopwatch.StartNew();
 
@@ -40,28 +43,29 @@ namespace PricingSheetDataManager
             // Unifying the instruments into a single list
             List<Instruments> ListedInstruments = GetAllInstruments(eurexInstruments, euronextInstruments);
 
-            //Fetch the ticker data from Bloomberg
-            List<string> DataFieldsTicker = new List<string>() { "OPT_UNDL_TICKER", "CRNCY", "ICB_SUPERSECTOR_NAME" };
-            BloombergDataRequest tickerRequest = new BloombergDataRequest(ListedInstruments.Select(x => x.GetGenericRtCode()).ToList(), DataFieldsTicker);
+            // Fetch the ticker data from Bloomberg
+            ListedInstruments = await FetchBloombergData(ListedInstruments);
 
-            var response = await tickerRequest.FetchInstrument();
+            // Load previous data from JSON file
+            JSONReader reader = new JSONReader(Constants.PricingSheetFolderPath, Constants.JSONFileName);
 
-            foreach (var r in response.ToList())
-            {
-                var target = ListedInstruments.Where(x => x.GetGenericRtCode() == r.Ticker).FirstOrDefault();
-                target.Underlying = r.Underlying;
-                target.Currency = r.Currency;
-                target.ICBSuperSectorName = r.ICBSuperSectorName;
-            }
+            List<Maturities> maturities = reader.LoadClass<Maturities>(nameof(Maturities));
+            List<Fields> fields = reader.LoadClass<Fields>(nameof(Fields));
+            List<LastPriceLoad> lastPriceLoad = reader.LoadClass<LastPriceLoad>(nameof(LastPriceLoad));
+            List<UnderlyingSpot> underlyingSpot = reader.LoadClass<UnderlyingSpot>(nameof(UnderlyingSpot));
 
-            List<string> DataFieldsUnderlying = new List<string>() { "SHORT_NAME" };
-            BloombergDataRequest underlyingRequest = new BloombergDataRequest(ListedInstruments.Where(x => x.Underlying != null).Select(x => x.GetUlRtCode()).Distinct().ToList(), DataFieldsUnderlying);
+            // Update maturities
+            maturities = UpdateMaturities(maturities);
 
-            var response2 = await underlyingRequest.FetchInstrument();
+            // Add missing csv files to database
 
-            foreach (var i in ListedInstruments)
-                i.ShortName = response2.Where(r => r.Ticker == i.GetUlRtCode()).Select(r => r.ShortName).FirstOrDefault() ?? string.Empty;
+            // Save changes to JSON file
+            JSONContent JsonContent = new JSONContent(ListedInstruments, maturities, fields, lastPriceLoad, underlyingSpot);
+            reader.SaveJSON(JsonContent);
 
+            stopwatch.Stop();
+            Console.WriteLine("Pricing Sheet was updated successfully");
+            Console.WriteLine($"Update completed in: {stopwatch.ElapsedMilliseconds / 1000} seconds.");
         }
 
         private static List<Instruments> GetAllInstruments(List<EurexInstruments> eurexInstruments, List<EuronextInstruments> euronextInstruments)
@@ -97,6 +101,72 @@ namespace PricingSheetDataManager
                     );
 
             return ListedInstruments;
+        }
+
+        private static async Task<List<Instruments>> FetchBloombergData(List<Instruments> ListedInstruments)
+        {
+            Console.WriteLine("Fetching Bloomberg data...");
+            List<string> DataFieldsTicker = new List<string>() { "OPT_UNDL_TICKER", "CRNCY", "ICB_SUPERSECTOR_NAME" };
+            BloombergDataRequest tickerRequest = new BloombergDataRequest(ListedInstruments.Select(x => x.GetGenericRtCode()).ToList(), DataFieldsTicker);
+
+            var response = await tickerRequest.FetchInstrument();
+
+            foreach (var r in response.ToList())
+            {
+                var target = ListedInstruments.Where(x => x.GetGenericRtCode() == r.Ticker).FirstOrDefault();
+                target.Underlying = r.Underlying;
+                target.Currency = r.Currency;
+                target.ICBSuperSectorName = r.ICBSuperSectorName;
+            }
+
+            List<string> DataFieldsUnderlying = new List<string>() { "SHORT_NAME" };
+            BloombergDataRequest underlyingRequest = new BloombergDataRequest(ListedInstruments.Where(x => x.Underlying != null).Select(x => x.GetUlRtCode()).Distinct().ToList(), DataFieldsUnderlying);
+
+            var response2 = await underlyingRequest.FetchInstrument();
+
+            foreach (var i in ListedInstruments)
+                i.ShortName = response2.Where(r => r.Ticker == i.GetUlRtCode()).Select(r => r.ShortName).FirstOrDefault() ?? string.Empty;
+
+            return ListedInstruments;
+        }
+
+        private static List<Maturities> UpdateMaturities(List<Maturities> maturities)
+        {
+            Console.WriteLine("Updating maturities...");
+            int currentYear = DateTime.Now.Year;
+
+            // Deactivating past maturities
+            foreach (var mat in maturities)
+            {
+                int year = int.Parse(mat.MaturityCode.Substring(1, 2));
+                if (year < currentYear % 100)
+                {
+                    mat.Flux = false;
+                    mat.Active = false;
+                }
+            }
+
+            // Adding missing maturities up to the defined number of years ahead
+            List<Maturities> missingMaturities = new List<Maturities>();
+            for (int i = 0; i < Constants.MaturitiesAhead; i++)
+            {
+                if (!maturities.Any(m => m.MaturityCode == $"Z{(i + currentYear) % 100}"))
+                {
+                    Maturities newMat = new Maturities((currentYear + i) * 100 + 12, $"Z{(currentYear + i) % 100}", true, false);
+                    maturities.Add(newMat);
+                    missingMaturities.Add(newMat);
+                }
+            }
+
+            // Add missing maturities to the CSV files
+            if(missingMaturities.Count > 0)
+            {
+                Console.WriteLine("Adding missing maturities to CSV files...");
+                CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);
+                csvReader.AddMaturities(missingMaturities);
+            }
+
+            return maturities;
         }
 
         public static Dictionary<Exchanges, Dictionary<Region, string>> exchangeRegionMapping = new Dictionary<Exchanges, Dictionary<Region, string>>()

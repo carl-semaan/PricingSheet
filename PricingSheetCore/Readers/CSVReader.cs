@@ -183,6 +183,36 @@ namespace PricingSheetCore.Readers
 
             return csv.GetRecords<T>().ToList();
         }
+
+        public void AddMaturities(List<Maturities> maturities)
+        {
+            List<string> maturityCodes = new List<string>();
+            foreach (var mat in maturities)
+            {
+                string year = mat.MaturityCode.Substring(1, 2);
+                maturityCodes.Add($"M{year}");
+                maturityCodes.Add($"Z{year}");
+            }
+
+            int ctr = 0;
+            List<string> csvFiles = Directory.GetFiles(FilePath).ToList();
+
+            foreach (var csvFile in csvFiles)
+            {
+                var lines = File.ReadAllLines(csvFile).ToList();
+
+                if (lines.Count == 0)
+                    continue;
+
+                var headerCols = lines[0].Split(',');
+                foreach (var mat in maturityCodes)
+                    if (!headerCols.Contains(mat))
+                        lines[0] += $",{mat}";
+
+                File.WriteAllLines(csvFile, lines);
+                Console.WriteLine($"Updated: {Path.GetFileName(csvFile)}... {++ctr}/{csvFiles.Count}");
+            }
+        }
     }
 
     public class CSVTicker
