@@ -24,6 +24,8 @@ namespace PricingSheetDataManager.Euronext
             List<EuronextInstruments> EuronextInstruments = new List<EuronextInstruments>();
             try
             {
+                // Wait for file to be fully written
+                await Task.Delay(2000);
                 // Read the Euronext file
                 CSVReader csvReader = new CSVReader(Path.GetDirectoryName(tempPath), Path.GetFileName(tempPath), Delimiter: ";", SkipFirstRow: true);
                 EuronextInstruments = csvReader.LoadClass<EuronextInstruments>().Where(x => x.ProductFamily == "Dividend Stock Futures").ToList();

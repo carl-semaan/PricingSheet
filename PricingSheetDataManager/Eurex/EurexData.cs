@@ -24,6 +24,9 @@ namespace PricingSheetDataManager.Eurex
             List<EurexInstruments> eurexInstruments = new List<EurexInstruments>();
             try
             {
+                // Wait for file to be fully written
+                await Task.Delay(2000); 
+
                 // Read the eurex file
                 CSVReader csvReader = new CSVReader(Path.GetDirectoryName(tempPath), Path.GetFileName(tempPath), ";");
                 eurexInstruments = csvReader.LoadClass<EurexInstruments>().Where(x => x.ProductGroup == "SINGLE STOCK DIVIDEND FUTURES").ToList();

@@ -39,5 +39,10 @@ namespace PricingSheetCore.Models
         {
             return $"{Ticker}=A {ExchangeCode} {InstrumentType}";
         }
+
+        public string GetUlRtCode()
+        {
+            return $"{Underlying} {InstrumentType}";
+        }
     }
 }
