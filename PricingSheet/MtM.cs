@@ -240,7 +240,7 @@ namespace PricingSheet
 
         private void DisplaySpotAndYield()
         {
-            string yieldMaturity = $"Z{DateTime.Now.AddYears(2).Year % 10}";
+            string yieldMaturity = $"Z{DateTime.Now.AddYears(2).Year % 100}";
             double pivotMaturity;
 
             lock (_matrixLock)

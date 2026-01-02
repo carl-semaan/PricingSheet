@@ -227,6 +227,16 @@ namespace PricingSheet
             string[] parts = instrument.Split('=');
 
             string maturity = parts[1].Split(' ')[0];
+
+            int lastDigit = maturity[1] - '0';
+            int currentYear = DateTime.Now.Year;
+            int currentDigit = currentYear % 10;
+            int decade = (currentYear / 10) % 10;
+
+            if (lastDigit < currentDigit)
+                decade++;
+
+            maturity = $"{maturity[0]}{decade}{lastDigit}";
             string ticker = parts[0];
 
             BlockData target = Grid.GridMap[ticker];
