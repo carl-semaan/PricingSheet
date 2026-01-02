@@ -54,6 +54,9 @@ namespace PricingSheetDataManager
             List<LastPriceLoad> lastPriceLoad = reader.LoadClass<LastPriceLoad>(nameof(LastPriceLoad));
             List<UnderlyingSpot> underlyingSpot = reader.LoadClass<UnderlyingSpot>(nameof(UnderlyingSpot));
 
+            // Resetting last price load date to force reloading prices
+            lastPriceLoad[0].LastLoad = lastPriceLoad[0].LastLoad.AddDays(-1);
+
             // Update maturities
             maturities = UpdateMaturities(maturities);
 
@@ -159,7 +162,7 @@ namespace PricingSheetDataManager
             }
 
             // Add missing maturities to the CSV files
-            if(missingMaturities.Count > 0)
+            if (missingMaturities.Count > 0)
             {
                 Console.WriteLine("Adding missing maturities to CSV files...");
                 CSVReader csvReader = new CSVReader(Constants.TickersDBFolderPath);

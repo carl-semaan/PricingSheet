@@ -226,7 +226,7 @@ namespace PricingSheet
             else
                 rawResponse = LoadSavedPrices(reader);
 
-            SpotData = rawResponse.ToDictionary(x => x.Underlying, x => x);
+            SpotData = rawResponse.ToDictionary(x => x.Underlying.Replace(" Equity", ""), x => x);
 
             await FilesLoaded;
 
@@ -274,7 +274,7 @@ namespace PricingSheet
 
         private async Task<List<UnderlyingSpot>> LoadBloombergPrices(JSONReader reader)
         {
-            BloombergDataRequest dataRequest = new BloombergDataRequest(MtMSheetUniverse.Instruments.Select(x => x.Underlying).Distinct().ToList(), new List<string>() { "PX_CLOSE_1D" });
+            BloombergDataRequest dataRequest = new BloombergDataRequest(MtMSheetUniverse.Instruments.Where(x => !string.IsNullOrEmpty(x.Underlying)).Select(x => x.GetUlRtCode()).Distinct().ToList(), new List<string>() { "PX_CLOSE_1D" });
 
             Stopwatch sw = Stopwatch.StartNew();
             var rawResponse = await dataRequest.FetchUlSpot();
