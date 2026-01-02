@@ -29,5 +29,15 @@ namespace PricingSheetCore.Models
             this.ICBSuperSectorName = ICBSupersectorName;
             Exchange = exchange;
         }
+
+        public string GetRtCode(string Maturity)
+        {
+            return $"{Ticker}={Maturity} {ExchangeCode} {InstrumentType}";
+        }
+
+        public string GetGenericRtCode()
+        {
+            return $"{Ticker}=A {ExchangeCode} {InstrumentType}";
+        }
     }
 }

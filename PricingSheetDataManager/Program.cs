@@ -25,17 +25,28 @@ namespace PricingSheetDataManager
 
             //Fetch the ticker data from Bloomberg
             List<string> DataFieldsTicker = new List<string>() { "OPT_UNDL_TICKER", "CRNCY", "ICB_SUPERSECTOR_NAME" };
-            BloombergDataRequest tickerRequest = new BloombergDataRequest(ListedInstruments.Select(x => $"{x.Ticker}=A {x.ExchangeCode} {x.InstrumentType}").ToList(), DataFieldsTicker);
+            BloombergDataRequest tickerRequest = new BloombergDataRequest(ListedInstruments.Select(x => x.GetGenericRtCode()).ToList(), DataFieldsTicker);
 
             var response = await tickerRequest.FetchInstrument();
 
-            //foreach(var r in response.ToList())
-            //{
-            //    ListedInstruments.Where(x => )
-            //}
+            foreach (var r in response.ToList())
+            {
+                var target = ListedInstruments.Where(x => x.GetGenericRtCode() == r.Ticker).FirstOrDefault();
+                target.Underlying = r.Underlying;
+                target.Currency = r.Currency;
+                target.ICBSuperSectorName = r.ICBSuperSectorName;
+            }
 
             List<string> DataFieldsUnderlying = new List<string>() { "SHORT_NAME" };
-            //BloombergDataRequest underlyingRequest = new BloombergDataRequest(response.Result.Select(x => ))
+            BloombergDataRequest underlyingRequest = new BloombergDataRequest(ListedInstruments.Select(x => x.Underlying).Distinct().ToList(), DataFieldsUnderlying);
+
+            var response2 = await underlyingRequest.FetchInstrument();
+
+            foreach (var r in response2.ToList())
+            {
+                var target = ListedInstruments.Where(x => x.Underlying == r.Ticker).FirstOrDefault();
+                target.ShortName= r.ShortName;
+            }
         }
 
         private static List<Instruments> GetAllInstruments(List<EurexInstruments> eurexInstruments, List<EuronextInstruments> euronextInstruments)
