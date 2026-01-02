@@ -274,7 +274,7 @@ namespace PricingSheet
 
         private async Task<List<UnderlyingSpot>> LoadBloombergPrices(JSONReader reader)
         {
-            BloombergDataRequest dataRequest = new BloombergDataRequest(MtMInstance, MtMSheetUniverse.Instruments.Select(x => x.Underlying).Distinct().ToList(), new List<string>() { "PX_CLOSE_1D" });
+            BloombergDataRequest dataRequest = new BloombergDataRequest(MtMSheetUniverse.Instruments.Select(x => x.Underlying).Distinct().ToList(), new List<string>() { "PX_CLOSE_1D" });
 
             Stopwatch sw = Stopwatch.StartNew();
             var rawResponse = await dataRequest.FetchUlSpot();

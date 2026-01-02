@@ -226,7 +226,6 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Alerts\SpeechAlerts.cs" />
-    <Compile Include="Bloomberg\BloombergDataRequest.cs" />
     <Compile Include="Bloomberg\BloombergPipeline.cs" />
     <Compile Include="ExceptionHandler.cs" />
     <Compile Include="Forms\AddInstrumentForm.cs">

@@ -15,12 +15,10 @@ namespace PricingSheet.Bloomberg
     {
         public List<string> Instruments { get; set; }
         public List<string> Fields { get; set; }
-        public MtM _MtM { get; set; }
 
 
-        public BloombergDataRequest(MtM mtm, List<string> instruments, List<string> field)
+        public BloombergDataRequest(List<string> instruments, List<string> field)
         {
-            _MtM = mtm;
             Instruments = instruments;
             Fields = field;
         }
@@ -277,7 +275,6 @@ namespace PricingSheet.Bloomberg
 
             // Validate the underlyings short name
             BloombergDataRequest underlyingNamesReq = new BloombergDataRequest(
-                null,
                 instruments.Select(x => x.Underlying).Distinct().ToList(),
                 new List<string> { "SHORT_NAME" }
                 );
