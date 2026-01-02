@@ -130,7 +130,7 @@ namespace PricingSheetCore.Readers
                     var row = new Dictionary<string, string>
                     {
                         [headers[0]] = ticker.Ticker,
-                        [headers[1]] = targetInstrument.Underlying,
+                        [headers[1]] = targetInstrument.GetUlRtCode(),
                         [headers[2]] = targetInstrument.Currency,
                         [headers[3]] = ticker.Date,
                         [headers[4]] = targetSpot.Value.ToString()
